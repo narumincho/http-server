@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true
+  },
+  "tasks": {
+    "example-start": "deno run --check --watch --allow-net=:8000 ./example.ts"
+  }
+}
