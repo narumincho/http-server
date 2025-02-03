@@ -8,47 +8,66 @@ type ExtractParams<Path extends string> = Path extends
   `${string}/:${infer Param}/${infer Rest}`
   ? { readonly [K in Param]: string } & ExtractParams<`/${Rest}`>
   : Path extends `${string}/:${infer Param}` ? { readonly [K in Param]: string }
-  : Record<string, never>;
+  : Record<string, Record<string, unknown>>;
 
-type PathItemObjectWithPath = {
+const supportedHttpMethod = [
+  "GET",
+  "POST",
+  "PUT",
+  "DELETE",
+  "PATCH",
+  "HEAD",
+  "OPTIONS",
+  "CONNECT",
+  "TRACE",
+] as const;
+
+type HttpMethod = typeof supportedHttpMethod[number];
+
+const supportedHttpMethodSet: ReadonlySet<string> = new Set(
+  supportedHttpMethod,
+);
+
+type Operation = {
   readonly path: string;
-  readonly get?: TypedOperationObject<Record<string, unknown>> | undefined;
-};
-
-const pathParametersSymbol = Symbol();
-
-type TypedOperationObject<
-  in out PathParameters extends Record<string, unknown>,
-> = {
-  // readonly [pathParametersSymbol]: PathParameters;
+  readonly method: HttpMethod;
+  readonly queryParameters: Record<string, unknown> | undefined;
   readonly handler: (
-    { pathParameters }: { readonly pathParameters: PathParameters },
+    { pathParameters, queryParameters }: {
+      readonly pathParameters: ExtractParams<string>;
+      readonly queryParameters: Record<string, unknown>;
+    },
   ) => Promise<Response>;
 };
 
-export const createPathItemObjectWithPath = <Path extends string>(
-  { path, get }: {
+export const createOperation = <
+  Path extends string,
+  QueryParameters extends Record<string, unknown>,
+>(
+  { path, method, queryParameters, handler }: {
     readonly path: Path;
-    readonly get?: TypedOperationObject<ExtractParams<Path>> | undefined;
+    readonly method: HttpMethod;
+    readonly queryParameters: QueryParameters | undefined;
+    readonly handler: (
+      { pathParameters, queryParameters }: {
+        readonly pathParameters: ExtractParams<Path>;
+        readonly queryParameters: QueryParameters;
+      },
+    ) => Promise<Response>;
   },
-): PathItemObjectWithPath => {
+): Operation => {
   return {
     path,
-    get: get as TypedOperationObject<Record<string, unknown>> | undefined,
+    method,
+    queryParameters,
+    handler: handler as (
+      { pathParameters, queryParameters }: {
+        readonly pathParameters: ExtractParams<string>;
+        readonly queryParameters: Record<string, unknown>;
+      },
+    ) => Promise<Response>,
   };
 };
-
-// export const createOperationObject = <
-//   PathParameters extends Record<string, unknown>,
-// >({ handler }: {
-//   handler: (
-//     { pathParameters }: { readonly pathParameters: PathParameters },
-//   ) => Promise<Response>;
-// }): TypedOperationObject<PathParameters> => {
-//   return {
-//     handler,
-//   };
-// };
 
 // export const requestBodyJson = ({}: {
 //   readonly;
@@ -56,32 +75,31 @@ export const createPathItemObjectWithPath = <Path extends string>(
 
 export const createHandler = (
   { paths }: {
-    readonly paths: ReadonlyArray<PathItemObjectWithPath>;
+    readonly paths: ReadonlyArray<Operation>;
   },
 ): (request: Request) => Promise<Response> => {
   return async (request): Promise<Response> => {
-    for (const { path, get } of paths) {
+    const pathsGroupByPath: ReadonlyMap<
+      string,
+      ReadonlyArray<Operation>
+    > = Map
+      .groupBy(paths, (operation) => operation.path);
+    for (const [path, operations] of pathsGroupByPath) {
       const urlPattern = new URLPattern({ pathname: path });
       const result = urlPattern.exec(request.url);
       if (result) {
-        switch (request.method) {
-          case "GET":
-            if (!get) {
-              return new Response(undefined, { status: 405 });
-            }
-            return await get.handler({
-              pathParameters: result.pathname.groups,
-            });
-          case "POST":
-          case "PUT":
-          case "DELETE":
-          case "PATCH":
-          case "HEAD":
-          case "OPTIONS":
-          case "CONNECT":
-          case "TRACE":
-            return new Response(undefined, { status: 405 });
+        const mathMethodOperation = operations.find((operation) =>
+          operation.method === request.method
+        );
+        if (mathMethodOperation) {
+          return await mathMethodOperation.handler({
+            pathParameters: result.pathname.groups as Record<string, never>,
+            queryParameters: {},
+          });
         }
+        return new Response(undefined, {
+          status: supportedHttpMethodSet.has(request.method) ? 405 : 501,
+        });
       }
     }
     return new Response(undefined, { status: 404 });
