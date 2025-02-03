@@ -28,6 +28,8 @@ const supportedHttpMethodSet: ReadonlySet<string> = new Set(
   supportedHttpMethod,
 );
 
+const operationSymbol = Symbol();
+
 type Operation = {
   readonly path: string;
   readonly method: HttpMethod;
@@ -38,6 +40,7 @@ type Operation = {
       readonly queryParameters: Record<string, unknown>;
     },
   ) => Promise<Response>;
+  readonly [operationSymbol]: true;
 };
 
 export const createOperation = <
@@ -47,7 +50,12 @@ export const createOperation = <
   { path, method, queryParameters, handler }: {
     readonly path: Path;
     readonly method: HttpMethod;
-    readonly queryParameters: QueryParameters | undefined;
+    readonly queryParameters: {
+      [k in keyof QueryParameters]: {
+        readonly description: string;
+        readonly required: boolean;
+      };
+    };
     readonly handler: (
       { pathParameters, queryParameters }: {
         readonly pathParameters: ExtractParams<Path>;
@@ -66,6 +74,7 @@ export const createOperation = <
         readonly queryParameters: Record<string, unknown>;
       },
     ) => Promise<Response>,
+    [operationSymbol]: true,
   };
 };
 
@@ -102,6 +111,8 @@ export const createHandler = (
         });
       }
     }
-    return new Response(undefined, { status: 404 });
+    return new Response(undefined, {
+      status: supportedHttpMethodSet.has(request.method) ? 404 : 501,
+    });
   };
 };

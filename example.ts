@@ -4,10 +4,21 @@ Deno.serve(
   createHandler({
     paths: [
       createOperation({
-        path: "/users",
+        path: "/items",
         method: "GET",
         queryParameters: {
-          sample: 3,
+          filter: {
+            description: "フィルターのパラメーター",
+            required: false,
+          },
+          withDetail: {
+            description: "詳細情報も取得するかどうか",
+            required: false,
+          },
+          sampleRequired: {
+            description: "必須パラメーター テスト",
+            required: true,
+          },
         },
         handler: async ({ pathParameters, queryParameters }) => {
           console.log(pathParameters, queryParameters);
@@ -15,21 +26,22 @@ Deno.serve(
         },
       }),
       createOperation({
-        path: "/users",
+        path: "/items",
         method: "POST",
-        queryParameters: {
-          sample: 3,
-        },
+        queryParameters: {},
         handler: async ({ pathParameters, queryParameters }) => {
           console.log(pathParameters, queryParameters);
           return new Response();
         },
       }),
       createOperation({
-        path: "/users/:id",
+        path: "/items/:id",
         method: "GET",
         queryParameters: {
-          sample: 3,
+          withDetail: {
+            description: "詳細情報も取得するかどうか",
+            required: false,
+          },
         },
         handler: async ({ pathParameters, queryParameters }) => {
           console.log(pathParameters, queryParameters);
@@ -37,22 +49,18 @@ Deno.serve(
         },
       }),
       createOperation({
-        path: "/users/:id",
+        path: "/items/:id",
         method: "PATCH",
-        queryParameters: {
-          sample: 3,
-        },
+        queryParameters: {},
         handler: async ({ pathParameters, queryParameters }) => {
           console.log(pathParameters, queryParameters);
           return new Response();
         },
       }),
       createOperation({
-        path: "/users/:id",
+        path: "/items/:id",
         method: "DELETE",
-        queryParameters: {
-          sample: 3,
-        },
+        queryParameters: {},
         handler: async ({ pathParameters, queryParameters }) => {
           console.log(pathParameters, queryParameters);
           return new Response();
