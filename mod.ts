@@ -33,7 +33,10 @@ const operationSymbol = Symbol();
 type Operation = {
   readonly path: string;
   readonly method: HttpMethod;
-  readonly queryParameters: Record<string, unknown> | undefined;
+  readonly queryParameters: Record<string, {
+    readonly description: string;
+    readonly required: boolean;
+  }>;
   readonly handler: (
     { pathParameters, queryParameters }: {
       readonly pathParameters: ExtractParams<string>;
@@ -101,9 +104,10 @@ export const createHandler = (
           operation.method === request.method
         );
         if (mathMethodOperation) {
-          return await mathMethodOperation.handler({
-            pathParameters: result.pathname.groups as Record<string, never>,
-            queryParameters: {},
+          return await handleOperation({
+            operation: mathMethodOperation,
+            request,
+            result,
           });
         }
         return new Response(undefined, {
@@ -115,4 +119,50 @@ export const createHandler = (
       status: supportedHttpMethodSet.has(request.method) ? 404 : 501,
     });
   };
+};
+
+const handleOperation = async (
+  { operation, request, result }: {
+    operation: Operation;
+    request: Request;
+    result: URLPatternResult;
+  },
+): Promise<Response> => {
+  const searchParams = new URL(request.url).searchParams;
+  const queryParameters = Object.entries(operation.queryParameters ?? {}).map((
+    [name, queryParameter],
+  ): { type: "value"; name: string; value: unknown } | {
+    type: "error";
+    message: string;
+  } => {
+    const value = searchParams.get(name);
+    if (queryParameter.required && value === null) {
+      return {
+        type: "error",
+        message: `${name} is required in url query parameter`,
+      };
+    }
+    return { type: "value", name, value };
+  });
+  const errors = queryParameters.filter((e) => e.type === "error");
+  if (errors.length > 0) {
+    return new Response(
+      JSON.stringify({ errors: errors.map((e) => ({ message: e.message })) }),
+      {
+        headers: {
+          "content-type": "application/json",
+        },
+        status: 400,
+      },
+    );
+  }
+
+  return await operation.handler({
+    pathParameters: result.pathname.groups as Record<string, never>,
+    queryParameters: Object.fromEntries(
+      queryParameters.flatMap((e) =>
+        e.type === "value" ? [[e.name, e.value]] : []
+      ),
+    ),
+  });
 };
