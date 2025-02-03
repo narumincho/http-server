@@ -48,7 +48,7 @@ type Operation = {
 
 export const createOperation = <
   Path extends string,
-  QueryParameters extends Record<string, unknown>,
+  QueryParameters extends Record<string, boolean>,
 >(
   { path, method, queryParameters, handler }: {
     readonly path: Path;
@@ -56,13 +56,16 @@ export const createOperation = <
     readonly queryParameters: {
       [k in keyof QueryParameters]: {
         readonly description: string;
-        readonly required: boolean;
+        readonly required: QueryParameters[k];
       };
     };
     readonly handler: (
       { pathParameters, queryParameters }: {
         readonly pathParameters: ExtractParams<Path>;
-        readonly queryParameters: QueryParameters;
+        readonly queryParameters: {
+          [k in keyof QueryParameters]: QueryParameters[k] extends true ? string
+            : (string | undefined);
+        };
       },
     ) => Promise<Response>;
   },
@@ -135,8 +138,8 @@ const handleOperation = async (
     type: "error";
     message: string;
   } => {
-    const value = searchParams.get(name);
-    if (queryParameter.required && value === null) {
+    const value = searchParams.get(name) ?? undefined;
+    if (queryParameter.required && value === undefined) {
       return {
         type: "error",
         message: `${name} is required in url query parameter`,
