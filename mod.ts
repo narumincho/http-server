@@ -12,39 +12,78 @@ type ExtractParams<Path extends string> = Path extends
 
 type PathItemObjectWithPath = {
   readonly path: string;
-  // readonly
+  readonly get?: TypedOperationObject<Record<string, unknown>> | undefined;
 };
 
-type TypedOperationObject<PathParameters> = {};
+const pathParametersSymbol = Symbol();
 
-export const createPathItemObjectWithPath = <Path extends string>({ path }: {
-  readonly path: Path;
-  readonly get?: TypedOperationObject<ExtractParams<Path>> | undefined;
-}): PathItemObjectWithPath => {
+type TypedOperationObject<
+  in out PathParameters extends Record<string, unknown>,
+> = {
+  // readonly [pathParametersSymbol]: PathParameters;
+  readonly handler: (
+    { pathParameters }: { readonly pathParameters: PathParameters },
+  ) => Promise<Response>;
 };
 
-export const createOperationObject = <
-  PathParameters extends string,
-  RequestBodyObjectList extends RequestBodyObject[],
->({ requestBody }: {
-  readonly requestBody: RequestBodyObjectList;
-}): TypedOperationObject<PathParameters> => {};
+export const createPathItemObjectWithPath = <Path extends string>(
+  { path, get }: {
+    readonly path: Path;
+    readonly get?: TypedOperationObject<ExtractParams<Path>> | undefined;
+  },
+): PathItemObjectWithPath => {
+  return {
+    path,
+    get: get as TypedOperationObject<Record<string, unknown>> | undefined,
+  };
+};
 
-export const requestBodyJson = ({}: {
-  readonly;
-}) => {};
+// export const createOperationObject = <
+//   PathParameters extends Record<string, unknown>,
+// >({ handler }: {
+//   handler: (
+//     { pathParameters }: { readonly pathParameters: PathParameters },
+//   ) => Promise<Response>;
+// }): TypedOperationObject<PathParameters> => {
+//   return {
+//     handler,
+//   };
+// };
 
-export const httpServe = (
-  { port, signal }: {
-    readonly port?: number | undefined;
-    readonly signal?: AbortSignal | undefined;
+// export const requestBodyJson = ({}: {
+//   readonly;
+// }) => {};
+
+export const createHandler = (
+  { paths }: {
     readonly paths: ReadonlyArray<PathItemObjectWithPath>;
   },
-): Deno.HttpServer<Deno.NetAddr> => {
-  return Deno.serve(
-    { ...(port ? { port } : {}), ...(signal ? { signal } : {}) },
-    (request) => {
-      return new Response();
-    },
-  );
+): (request: Request) => Promise<Response> => {
+  return async (request): Promise<Response> => {
+    for (const { path, get } of paths) {
+      const urlPattern = new URLPattern({ pathname: path });
+      const result = urlPattern.exec(request.url);
+      if (result) {
+        switch (request.method) {
+          case "GET":
+            if (!get) {
+              return new Response(undefined, { status: 405 });
+            }
+            return await get.handler({
+              pathParameters: result.pathname.groups,
+            });
+          case "POST":
+          case "PUT":
+          case "DELETE":
+          case "PATCH":
+          case "HEAD":
+          case "OPTIONS":
+          case "CONNECT":
+          case "TRACE":
+            return new Response(undefined, { status: 405 });
+        }
+      }
+    }
+    return new Response(undefined, { status: 404 });
+  };
 };
