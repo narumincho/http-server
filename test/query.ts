@@ -11,14 +11,17 @@ Deno.test("query parameter", async () => {
           key: {
             description: "",
             required: true,
+            schema: "string",
           },
           "サンプルキー!": {
             description: "",
             required: false,
+            schema: "string",
           },
           " &?empty": {
             description: "",
             required: false,
+            schema: "string",
           },
         },
         // deno-lint-ignore require-await

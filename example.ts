@@ -11,7 +11,7 @@ Deno.serve(
             description: "フィルターのパラメーター",
             required: false,
             deprecated: false,
-            example: "32",
+            example: 33,
             schema: "int",
           },
           withDetail: {

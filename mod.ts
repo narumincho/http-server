@@ -43,25 +43,20 @@ type OperationInput<
   Path extends string,
   QueryParameters extends Record<
     string,
-    { required: boolean; type: QueryValueType }
+    QueryParameterInput<boolean, QueryValueType>
   >,
 > = {
   readonly path: Path;
   readonly method: HttpMethod;
-  readonly queryParameters: {
-    [k in keyof QueryParameters]: QueryParameterInput<
-      QueryParameters[k]["required"],
-      QueryParameters[k]["type"]
-    >;
-  };
+  readonly queryParameters: QueryParameters;
   readonly handler: (
     { pathParameters, queryParameters }: {
       readonly pathParameters: ExtractParams<Path>;
       readonly queryParameters: {
         [k in keyof QueryParameters]: QueryParameters[k]["required"] extends
-          true ? (QueryValueTypeToTsType<QueryParameters[k]["type"]>)
+          true ? (QueryValueTypeToTsType<QueryParameters[k]["schema"]>)
           : (
-            | (QueryValueTypeToTsType<QueryParameters[k]["type"]>)
+            | (QueryValueTypeToTsType<QueryParameters[k]["schema"]>)
             | undefined
           );
       };
@@ -108,7 +103,7 @@ export const createOperation = <
   Path extends string,
   QueryParameters extends Record<
     string,
-    { required: boolean; type: QueryValueType }
+    QueryParameterInput<boolean, QueryValueType>
   >,
 >(
   { path, method, queryParameters, handler }: OperationInput<
