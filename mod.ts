@@ -30,13 +30,63 @@ const supportedHttpMethodSet: ReadonlySet<string> = new Set(
 
 const operationSymbol = Symbol();
 
-type Operation = {
+type QueryValueType = "string" | "int" | "number" | "boolean";
+
+type QueryValueTypeToTsType<type extends QueryValueType> = {
+  string: string;
+  int: number;
+  number: number;
+  boolean: boolean;
+}[type];
+
+type OperationInput<
+  Path extends string,
+  QueryParameters extends Record<
+    string,
+    { required: boolean; type: QueryValueType }
+  >,
+> = {
+  readonly path: Path;
+  readonly method: HttpMethod;
+  readonly queryParameters: {
+    [k in keyof QueryParameters]: QueryParameterInput<
+      QueryParameters[k]["required"],
+      QueryParameters[k]["type"]
+    >;
+  };
+  readonly handler: (
+    { pathParameters, queryParameters }: {
+      readonly pathParameters: ExtractParams<Path>;
+      readonly queryParameters: {
+        [k in keyof QueryParameters]: QueryParameters[k]["required"] extends
+          true ? (QueryValueTypeToTsType<QueryParameters[k]["type"]>)
+          : (
+            | (QueryValueTypeToTsType<QueryParameters[k]["type"]>)
+            | undefined
+          );
+      };
+    },
+  ) => Promise<Response>;
+};
+
+type QueryParameterInput<
+  Required extends boolean,
+  Type extends QueryValueType,
+> = {
+  readonly description: string;
+  readonly required: Required;
+  readonly schema: Type;
+  readonly example?: QueryValueTypeToTsType<Type> | undefined;
+  /**
+   * @default false
+   */
+  readonly deprecated?: boolean;
+};
+
+type OperationInternal = {
   readonly path: string;
   readonly method: HttpMethod;
-  readonly queryParameters: Record<string, {
-    readonly description: string;
-    readonly required: boolean;
-  }>;
+  readonly queryParameters: Record<string, QueryParameterInternal>;
   readonly handler: (
     { pathParameters, queryParameters }: {
       readonly pathParameters: ExtractParams<string>;
@@ -46,34 +96,37 @@ type Operation = {
   readonly [operationSymbol]: true;
 };
 
+type QueryParameterInternal = {
+  readonly description: string;
+  readonly required: boolean;
+  readonly deprecated: boolean;
+  readonly schema: QueryValueType;
+  readonly example: QueryValueTypeToTsType<QueryValueType> | undefined;
+};
+
 export const createOperation = <
   Path extends string,
-  QueryParameters extends Record<string, boolean>,
+  QueryParameters extends Record<
+    string,
+    { required: boolean; type: QueryValueType }
+  >,
 >(
-  { path, method, queryParameters, handler }: {
-    readonly path: Path;
-    readonly method: HttpMethod;
-    readonly queryParameters: {
-      [k in keyof QueryParameters]: {
-        readonly description: string;
-        readonly required: QueryParameters[k];
-      };
-    };
-    readonly handler: (
-      { pathParameters, queryParameters }: {
-        readonly pathParameters: ExtractParams<Path>;
-        readonly queryParameters: {
-          [k in keyof QueryParameters]: QueryParameters[k] extends true ? string
-            : (string | undefined);
-        };
-      },
-    ) => Promise<Response>;
-  },
-): Operation => {
+  { path, method, queryParameters, handler }: OperationInput<
+    Path,
+    QueryParameters
+  >,
+): OperationInternal => {
   return {
     path,
     method,
-    queryParameters,
+    queryParameters: Object.fromEntries(
+      Object.entries(queryParameters).map(
+        ([name, queryParameter]) => [
+          name,
+          queryParameterInputToQueryParameterInternal(queryParameter),
+        ],
+      ),
+    ),
     handler: handler as (
       { pathParameters, queryParameters }: {
         readonly pathParameters: ExtractParams<string>;
@@ -84,19 +137,35 @@ export const createOperation = <
   };
 };
 
+const queryParameterInputToQueryParameterInternal = <
+  Required extends boolean,
+  Type extends QueryValueType,
+>(
+  { description, required, deprecated = false, example, schema }:
+    QueryParameterInput<Required, Type>,
+): QueryParameterInternal => {
+  return {
+    description,
+    required,
+    deprecated,
+    example,
+    schema,
+  };
+};
+
 // export const requestBodyJson = ({}: {
 //   readonly;
 // }) => {};
 
 export const createHandler = (
   { paths }: {
-    readonly paths: ReadonlyArray<Operation>;
+    readonly paths: ReadonlyArray<OperationInternal>;
   },
 ): (request: Request) => Promise<Response> => {
   return async (request): Promise<Response> => {
     const pathsGroupByPath: ReadonlyMap<
       string,
-      ReadonlyArray<Operation>
+      ReadonlyArray<OperationInternal>
     > = Map
       .groupBy(paths, (operation) => operation.path);
     for (const [path, operations] of pathsGroupByPath) {
@@ -126,7 +195,7 @@ export const createHandler = (
 
 const handleOperation = async (
   { operation, request, result }: {
-    operation: Operation;
+    operation: OperationInternal;
     request: Request;
     result: URLPatternResult;
   },
