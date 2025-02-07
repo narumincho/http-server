@@ -1,4 +1,5 @@
 import { createHandler, createOperation } from "./mod.ts";
+import { queryBoolean, queryString } from "./query.ts";
 
 Deno.serve(
   createHandler({
@@ -7,23 +8,22 @@ Deno.serve(
         path: "/items",
         method: "GET",
         queryParameters: {
-          filter: {
+          filter: queryString({
             description: "フィルターのパラメーター",
             required: false,
             deprecated: false,
-            example: 33,
-            schema: "int",
-          },
-          withDetail: {
+            example: "a",
+          }),
+          withDetail: queryBoolean({
             description: "詳細情報も取得するかどうか",
             required: false,
-            schema: "boolean",
-          },
-          sampleRequired: {
+            example: false,
+          }),
+          sampleRequired: queryString({
             description: "必須パラメーター テスト",
             required: true,
-            schema: "string",
-          },
+            example: "サンプル必須!",
+          }),
         },
         handler: async ({ pathParameters, queryParameters }) => {
           console.log(pathParameters, queryParameters);
@@ -43,11 +43,10 @@ Deno.serve(
         path: "/items/:id",
         method: "GET",
         queryParameters: {
-          withDetail: {
+          withDetail: queryBoolean({
             description: "詳細情報も取得するかどうか",
             required: false,
-            schema: "boolean",
-          },
+          }),
         },
         handler: async ({ pathParameters, queryParameters }) => {
           console.log(pathParameters, queryParameters);

@@ -1,5 +1,6 @@
 import { assertEquals } from "jsr:@std/assert";
 import { createHandler, createOperation } from "../mod.ts";
+import { queryString } from "../query.ts";
 
 Deno.test("query parameter", async () => {
   const handler = createHandler({
@@ -8,21 +9,21 @@ Deno.test("query parameter", async () => {
         path: "/samplePath",
         method: "GET",
         queryParameters: {
-          key: {
+          key: queryString({
             description: "",
             required: true,
-            schema: "string",
-          },
-          "サンプルキー!": {
+            example: "キー",
+          }),
+          "サンプルキー!": queryString({
             description: "",
             required: false,
-            schema: "string",
-          },
-          " &?empty": {
+            example: "サンプルキーの例",
+          }),
+          " &?empty": queryString({
             description: "",
             required: false,
-            schema: "string",
-          },
+            example: "こんなクエリ名を指定することはまずないけど",
+          }),
         },
         // deno-lint-ignore require-await
         handler: async ({ queryParameters }) =>

@@ -3,6 +3,11 @@ import {
   OperationObject,
   RequestBodyObject,
 } from "npm:openapi-typescript";
+import {
+  QueryInternal,
+  QueryValueType,
+  QueryValueTypeToTsType,
+} from "./query.ts";
 
 type ExtractParams<Path extends string> = Path extends
   `${string}/:${infer Param}/${infer Rest}`
@@ -30,33 +35,36 @@ const supportedHttpMethodSet: ReadonlySet<string> = new Set(
 
 const operationSymbol = Symbol();
 
-type QueryValueType = "string" | "int" | "number" | "boolean";
-
-type QueryValueTypeToTsType<type extends QueryValueType> = {
-  string: string;
-  int: number;
-  number: number;
-  boolean: boolean;
-}[type];
-
 type OperationInput<
   Path extends string,
   QueryParameters extends Record<
     string,
-    QueryParameterInput<boolean, QueryValueType>
+    QueryInternal<
+      boolean,
+      QueryValueType
+    >
   >,
 > = {
   readonly path: Path;
   readonly method: HttpMethod;
+  /**
+   * ```ts
+   * queryParameters: {
+   *   withArchived: queryBoolean({
+   *     description: ""
+   *   }),
+   * }
+   * ```
+   */
   readonly queryParameters: QueryParameters;
   readonly handler: (
     { pathParameters, queryParameters }: {
       readonly pathParameters: ExtractParams<Path>;
       readonly queryParameters: {
         [k in keyof QueryParameters]: QueryParameters[k]["required"] extends
-          true ? (QueryValueTypeToTsType<QueryParameters[k]["schema"]>)
+          true ? (QueryValueTypeToTsType<QueryParameters[k]["type"]>)
           : (
-            | (QueryValueTypeToTsType<QueryParameters[k]["schema"]>)
+            | (QueryValueTypeToTsType<QueryParameters[k]["type"]>)
             | undefined
           );
       };
@@ -81,7 +89,10 @@ type QueryParameterInput<
 type OperationInternal = {
   readonly path: string;
   readonly method: HttpMethod;
-  readonly queryParameters: Record<string, QueryParameterInternal>;
+  readonly queryParameters: Record<
+    string,
+    QueryInternal<boolean, QueryValueType>
+  >;
   readonly handler: (
     { pathParameters, queryParameters }: {
       readonly pathParameters: ExtractParams<string>;
@@ -91,19 +102,14 @@ type OperationInternal = {
   readonly [operationSymbol]: true;
 };
 
-type QueryParameterInternal = {
-  readonly description: string;
-  readonly required: boolean;
-  readonly deprecated: boolean;
-  readonly schema: QueryValueType;
-  readonly example: QueryValueTypeToTsType<QueryValueType> | undefined;
-};
-
 export const createOperation = <
   Path extends string,
   QueryParameters extends Record<
     string,
-    QueryParameterInput<boolean, QueryValueType>
+    QueryInternal<
+      boolean,
+      QueryValueType
+    >
   >,
 >(
   { path, method, queryParameters, handler }: OperationInput<
@@ -118,7 +124,7 @@ export const createOperation = <
       Object.entries(queryParameters).map(
         ([name, queryParameter]) => [
           name,
-          queryParameterInputToQueryParameterInternal(queryParameter),
+          queryParameter,
         ],
       ),
     ),
@@ -129,22 +135,6 @@ export const createOperation = <
       },
     ) => Promise<Response>,
     [operationSymbol]: true,
-  };
-};
-
-const queryParameterInputToQueryParameterInternal = <
-  Required extends boolean,
-  Type extends QueryValueType,
->(
-  { description, required, deprecated = false, example, schema }:
-    QueryParameterInput<Required, Type>,
-): QueryParameterInternal => {
-  return {
-    description,
-    required,
-    deprecated,
-    example,
-    schema,
   };
 };
 
