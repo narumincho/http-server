@@ -1,4 +1,5 @@
 import { assertEquals } from "jsr:@std/assert";
+import { assertSpyCall, spy } from "jsr:@std/testing/mock";
 import { createHandler, createOperation } from "../mod.ts";
 import { queryString } from "../query.ts";
 
@@ -52,40 +53,55 @@ Deno.test("query parameter", async () => {
 });
 
 Deno.test("query parameter required", async () => {
+  const samplePathHandler = spy<
+    void,
+    [{
+      readonly pathParameters: Record<string, Record<string, unknown>>;
+      readonly queryParameters: {
+        a: string | undefined;
+        b: string | undefined;
+        c: string | undefined;
+        d: string | undefined;
+        e: string | undefined;
+      };
+    }],
+    Promise<Response>
+  > // deno-lint-ignore require-await
+  (async () => new Response());
+
   const handler = createHandler({
     paths: [
       createOperation({
         path: "/samplePath",
         method: "GET",
         queryParameters: {
-          a: {
+          a: queryString({
             description: "",
             required: true,
-          },
-          b: {
+            example: "A",
+          }),
+          b: queryString({
             description: "",
             required: true,
-          },
-          c: {
+            example: "B",
+          }),
+          c: queryString({
             description: "",
             required: true,
-          },
-          d: {
+            example: "C",
+          }),
+          d: queryString({
             description: "",
             required: true,
-          },
-          e: {
+            example: "D",
+          }),
+          e: queryString({
             description: "",
             required: false,
-          },
-        },
-        // deno-lint-ignore require-await
-        handler: async ({ queryParameters }) =>
-          new Response(JSON.stringify(queryParameters), {
-            headers: {
-              "content-type": "application/json",
-            },
+            example: "E",
           }),
+        },
+        handler: samplePathHandler,
       }),
     ],
   });
@@ -95,6 +111,7 @@ Deno.test("query parameter required", async () => {
   url.searchParams.set("b", "B");
 
   const response = await handler(new Request(url));
+  assertSpyCall(samplePathHandler, 0);
   assertEquals(response.status, 400);
   assertEquals(await response.json(), {
     errors: [

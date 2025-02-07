@@ -12,32 +12,64 @@ export type QueryValueTypeToTsType<type extends QueryValueType> = {
 /**
  * created by {@link queryString}
  */
-export type QueryInternal<
-  Required extends boolean,
-  Type extends QueryValueType,
+export type Query<
+  Type extends unknown,
 > = {
   readonly description: string;
-  readonly required: Required;
+  readonly required: boolean;
   readonly deprecated: boolean;
-  readonly example: QueryValueTypeToTsType<Type>;
-  readonly type: Type;
+  readonly example: Type;
+  readonly typeHint: QueryValueType;
+  readonly decode: (values: ReadonlyArray<string>) => Type;
   readonly [queryInternalSymbol]: typeof queryInternalSymbol;
 };
 
-export function queryString<Required extends boolean>(
-  { description, example, required, deprecated = false }: {
+export function queryString(
+  { description, example, deprecated = false }: {
     readonly description: string;
     readonly example: string;
-    readonly required: Required;
     readonly deprecated?: boolean | undefined;
   },
-): QueryInternal<Required, "string"> {
+): Query<string> {
   return {
     description,
     example,
-    type: "string",
-    required,
+    typeHint: "string",
+    required: true,
     deprecated,
+    decode: (values) => {
+      if (values.length > 1) {
+        throw new Error("must be specified only once");
+      }
+      const value = values[0];
+      if (typeof value !== "string") {
+        throw new Error("must be specified");
+      }
+      return value;
+    },
+    [queryInternalSymbol]: queryInternalSymbol,
+  };
+}
+
+export function queryOptionalString(
+  { description, example, deprecated = false }: {
+    readonly description: string;
+    readonly example: string;
+    readonly deprecated?: boolean | undefined;
+  },
+): Query<string | undefined> {
+  return {
+    description,
+    example,
+    typeHint: "string",
+    required: false,
+    deprecated,
+    decode: (values) => {
+      if (values.length > 1) {
+        throw new Error("must be specified only once");
+      }
+      return values[0];
+    },
     [queryInternalSymbol]: queryInternalSymbol,
   };
 }
@@ -49,7 +81,7 @@ export function queryInteger<Required extends boolean>(
     readonly required: Required;
     readonly deprecated?: boolean | undefined;
   },
-): QueryInternal<Required, "integer"> {
+): Query<number> {
   return {
     description,
     example,
@@ -67,7 +99,7 @@ export function queryFloat<Required extends boolean>(
     readonly required: Required;
     readonly deprecated?: boolean | undefined;
   },
-): QueryInternal<Required, "float"> {
+): Query<Required, "float"> {
   return {
     description,
     example,
@@ -91,7 +123,7 @@ export function queryBoolean<Required extends boolean>(
      */
     readonly deprecated?: boolean | undefined;
   },
-): QueryInternal<Required, "boolean"> {
+): Query<Required, "boolean"> {
   return {
     description,
     example,

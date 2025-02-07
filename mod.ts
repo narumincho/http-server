@@ -3,11 +3,7 @@ import {
   OperationObject,
   RequestBodyObject,
 } from "npm:openapi-typescript";
-import {
-  QueryInternal,
-  QueryValueType,
-  QueryValueTypeToTsType,
-} from "./query.ts";
+import { Query, QueryValueType, QueryValueTypeToTsType } from "./query.ts";
 
 type ExtractParams<Path extends string> = Path extends
   `${string}/:${infer Param}/${infer Rest}`
@@ -37,13 +33,7 @@ const operationSymbol = Symbol();
 
 type OperationInput<
   Path extends string,
-  QueryParameters extends Record<
-    string,
-    QueryInternal<
-      boolean,
-      QueryValueType
-    >
-  >,
+  QueryParameters extends Record<string, Query<unknown>>,
 > = {
   readonly path: Path;
   readonly method: HttpMethod;
@@ -61,12 +51,7 @@ type OperationInput<
     { pathParameters, queryParameters }: {
       readonly pathParameters: ExtractParams<Path>;
       readonly queryParameters: {
-        [k in keyof QueryParameters]: QueryParameters[k]["required"] extends
-          true ? (QueryValueTypeToTsType<QueryParameters[k]["type"]>)
-          : (
-            | (QueryValueTypeToTsType<QueryParameters[k]["type"]>)
-            | undefined
-          );
+        [k in keyof QueryParameters]: QueryParameters[k]["example"];
       };
     },
   ) => Promise<Response>;
@@ -91,7 +76,7 @@ type OperationInternal = {
   readonly method: HttpMethod;
   readonly queryParameters: Record<
     string,
-    QueryInternal<boolean, QueryValueType>
+    Query<unknown>
   >;
   readonly handler: (
     { pathParameters, queryParameters }: {
@@ -104,13 +89,7 @@ type OperationInternal = {
 
 export const createOperation = <
   Path extends string,
-  QueryParameters extends Record<
-    string,
-    QueryInternal<
-      boolean,
-      QueryValueType
-    >
-  >,
+  QueryParameters extends Record<string, Query<unknown>>,
 >(
   { path, method, queryParameters, handler }: OperationInput<
     Path,
