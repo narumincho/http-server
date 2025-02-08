@@ -3,7 +3,11 @@ import {
   OperationObject,
   RequestBodyObject,
 } from "npm:openapi-typescript";
-import { Query, QueryValueType, QueryValueTypeToTsType } from "./query.ts";
+import {
+  QueryDefinition,
+  QueryValueType,
+  QueryValueTypeToTsType,
+} from "./query.ts";
 
 type ExtractParams<Path extends string> = Path extends
   `${string}/:${infer Param}/${infer Rest}`
@@ -33,7 +37,7 @@ const operationSymbol = Symbol();
 
 type OperationInput<
   Path extends string,
-  QueryParameters extends Record<string, Query<unknown>>,
+  QueryParameters extends Record<string, QueryDefinition<unknown>>,
 > = {
   readonly path: Path;
   readonly method: HttpMethod;
@@ -76,7 +80,7 @@ type OperationInternal = {
   readonly method: HttpMethod;
   readonly queryParameters: Record<
     string,
-    Query<unknown>
+    QueryDefinition<unknown>
   >;
   readonly handler: (
     { pathParameters, queryParameters }: {
@@ -89,7 +93,7 @@ type OperationInternal = {
 
 export const createOperation = <
   Path extends string,
-  QueryParameters extends Record<string, Query<unknown>>,
+  QueryParameters extends Record<string, QueryDefinition<unknown>>,
 >(
   { path, method, queryParameters, handler }: OperationInput<
     Path,
@@ -171,14 +175,15 @@ const handleOperation = async (
     type: "error";
     message: string;
   } => {
-    const value = searchParams.get(name) ?? undefined;
-    if (queryParameter.required && value === undefined) {
+    try {
       return {
-        type: "error",
-        message: `${name} is required in url query parameter`,
+        type: "value",
+        name,
+        value: queryParameter.decode(searchParams.getAll(name)),
       };
+    } catch (e) {
+      return { type: "error", message: `${e} in query ${name}` };
     }
-    return { type: "value", name, value };
   });
   const errors = queryParameters.filter((e) => e.type === "error");
   if (errors.length > 0) {
