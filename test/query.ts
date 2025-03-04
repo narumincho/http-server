@@ -1,7 +1,7 @@
 import { assertEquals } from "jsr:@std/assert";
 import { spy } from "jsr:@std/testing/mock";
 import { createHandler, createOperation } from "../mod.ts";
-import { queryOptional, queryRequired, queryString } from "../query.ts";
+import { query } from "../mod.ts";
 import { Equal, Expect } from "npm:@type-challenges/utils";
 
 Deno.test("query parameter", async () => {
@@ -11,19 +11,19 @@ Deno.test("query parameter", async () => {
         path: "/samplePath",
         method: "GET",
         queryParameters: {
-          key: queryRequired({
+          key: query.queryRequired({
             description: "",
-            queryItemType: queryString(),
+            queryItemType: query.queryString(),
             example: "キー",
           }),
-          "サンプルキー!": queryOptional({
+          "サンプルキー!": query.queryOptional({
             description: "",
-            queryItemType: queryString(),
+            queryItemType: query.queryString(),
             example: "サンプルキーの例",
           }),
-          " &?empty": queryOptional({
+          " &?empty": query.queryOptional({
             description: "",
-            queryItemType: queryString(),
+            queryItemType: query.queryString(),
             example: "こんなクエリ名を指定することはまずないけど",
           }),
         },
@@ -123,30 +123,30 @@ Deno.test("query parameter required", async () => {
         path: "/samplePath",
         method: "GET",
         queryParameters: {
-          a: queryRequired({
+          a: query.queryRequired({
             description: "",
             example: "A",
-            queryItemType: queryString(),
+            queryItemType: query.queryString(),
           }),
-          b: queryRequired({
+          b: query.queryRequired({
             description: "",
-            queryItemType: queryString(),
+            queryItemType: query.queryString(),
             example: "B",
           }),
-          c: queryRequired({
+          c: query.queryRequired({
             description: "",
             example: "C",
-            queryItemType: queryString(),
+            queryItemType: query.queryString(),
           }),
-          d: queryRequired({
+          d: query.queryRequired({
             description: "",
             example: "D",
-            queryItemType: queryString(),
+            queryItemType: query.queryString(),
           }),
-          e: queryOptional({
+          e: query.queryOptional({
             description: "",
             example: "E",
-            queryItemType: queryString(),
+            queryItemType: query.queryString(),
           }),
         },
         handler: samplePathHandler,

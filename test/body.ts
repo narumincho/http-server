@@ -1,7 +1,6 @@
 import type { Equal, Expect } from "npm:@type-challenges/utils";
 import { assertEquals } from "jsr:@std/assert";
-import { createHandler, createOperation } from "../mod.ts";
-import { applicationOctetStream, textPlain } from "../requestBody.ts";
+import { createHandler, createOperation, json, requestBody } from "../mod.ts";
 
 Deno.test("body", async () => {
   const handler = createHandler({
@@ -12,8 +11,11 @@ Deno.test("body", async () => {
         requestBody: {
           description: "",
           content: [
-            textPlain(),
-            applicationOctetStream(),
+            requestBody.textPlain(),
+            requestBody.applicationOctetStream(),
+            requestBody.applicationJson(json.object({
+              a: json.string(),
+            })),
           ] as const,
         },
         // deno-lint-ignore require-await
@@ -28,6 +30,9 @@ Deno.test("body", async () => {
                 } | {
                   mimeType: "application/octet-stream";
                   content: Uint8Array<ArrayBuffer>;
+                } | {
+                  mimeType: "application/json";
+                  content: { a: string };
                 }
               >
             >,

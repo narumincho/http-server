@@ -1,3 +1,5 @@
+import { JsonDefinition } from "./json.ts";
+
 const requestBodySymbol = Symbol();
 
 export type RequestBodyDefinition<
@@ -31,6 +33,22 @@ export function applicationOctetStream(): RequestBodyDefinition<
   return {
     mimeType: "application/octet-stream",
     decode: () => new Uint8Array(),
+    [requestBodySymbol]: requestBodySymbol,
+  };
+}
+
+/**
+ * `application/octet-stream`
+ */
+export function applicationJson<T>(
+  jsonDefinition: JsonDefinition<T>,
+): RequestBodyDefinition<
+  "application/json",
+  T
+> {
+  return {
+    mimeType: "application/json",
+    decode: () => jsonDefinition.decode({}),
     [requestBodySymbol]: requestBodySymbol,
   };
 }
