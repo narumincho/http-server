@@ -7,7 +7,6 @@ Deno.test("Unrecognized method respond with the 501 status code", async () => {
       createOperation({
         path: "/samplePath",
         method: "GET",
-        queryParameters: {},
         // deno-lint-ignore require-await
         handler: async () => new Response(),
       }),

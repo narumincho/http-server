@@ -8,6 +8,7 @@ import {
   QueryValueType,
   QueryValueTypeToTsType,
 } from "./query.ts";
+import { RequestBodyDefinition } from "./requestBody.ts";
 
 type ExtractParams<Path extends string> = Path extends
   `${string}/:${infer Param}/${infer Rest}`
@@ -38,6 +39,9 @@ const operationSymbol = Symbol();
 type OperationInput<
   Path extends string,
   QueryParameters extends Record<string, QueryDefinition<unknown>>,
+  RequestBodyContent extends ReadonlyArray<
+    RequestBodyDefinition<string, unknown>
+  >,
 > = {
   readonly path: Path;
   readonly method: HttpMethod;
@@ -50,16 +54,25 @@ type OperationInput<
    * }
    * ```
    */
-  readonly queryParameters: QueryParameters;
+  readonly queryParameters?: QueryParameters;
+  readonly requestBody?: {
+    readonly description: string;
+    readonly content: RequestBodyContent;
+  };
   readonly handler: (
     { pathParameters, queryParameters }: {
       readonly pathParameters: ExtractParams<Path>;
       readonly queryParameters: {
         [k in keyof QueryParameters]: QueryParameters[k]["example"];
       };
+      readonly body: RequestBodyTransform<RequestBodyContent[number]>;
     },
   ) => Promise<Response>;
 };
+
+type RequestBodyTransform<T> = T extends RequestBodyDefinition<infer M, infer C>
+  ? { mimeType: M; content: C }
+  : never;
 
 type QueryParameterInput<
   Required extends boolean,
@@ -91,20 +104,24 @@ type OperationInternal = {
   readonly [operationSymbol]: true;
 };
 
-export const createOperation = <
+export function createOperation<
   Path extends string,
-  QueryParameters extends Record<string, QueryDefinition<unknown>>,
+  QueryParameters extends Record<string, QueryDefinition<unknown>> = never,
+  RequestBodyContent extends ReadonlyArray<
+    RequestBodyDefinition<string, unknown>
+  > = never,
 >(
   { path, method, queryParameters, handler }: OperationInput<
     Path,
-    QueryParameters
+    QueryParameters,
+    RequestBodyContent
   >,
-): OperationInternal => {
+): OperationInternal {
   return {
     path,
     method,
     queryParameters: Object.fromEntries(
-      Object.entries(queryParameters).map(
+      Object.entries(queryParameters ?? {}).map(
         ([name, queryParameter]) => [
           name,
           queryParameter,
@@ -119,7 +136,7 @@ export const createOperation = <
     ) => Promise<Response>,
     [operationSymbol]: true,
   };
-};
+}
 
 // export const requestBodyJson = ({}: {
 //   readonly;

@@ -1,7 +1,8 @@
 import { assertEquals } from "jsr:@std/assert";
-import { assertSpyCall, spy } from "jsr:@std/testing/mock";
+import { spy } from "jsr:@std/testing/mock";
 import { createHandler, createOperation } from "../mod.ts";
 import { queryOptional, queryRequired, queryString } from "../query.ts";
+import { Equal, Expect } from "npm:@type-challenges/utils";
 
 Deno.test("query parameter", async () => {
   const handler = createHandler({
@@ -27,12 +28,25 @@ Deno.test("query parameter", async () => {
           }),
         },
         // deno-lint-ignore require-await
-        handler: async ({ queryParameters }) =>
-          new Response(JSON.stringify(queryParameters), {
+        handler: async ({ queryParameters }) => {
+          type cases = [
+            Expect<
+              Equal<
+                typeof queryParameters,
+                {
+                  key: string;
+                  "\u30B5\u30F3\u30D7\u30EB\u30AD\u30FC!": string | undefined;
+                  " &?empty": string | undefined;
+                }
+              >
+            >,
+          ];
+          return new Response(JSON.stringify(queryParameters), {
             headers: {
               "content-type": "application/json",
             },
-          }),
+          });
+        },
       }),
     ],
   });
@@ -49,6 +63,40 @@ Deno.test("query parameter", async () => {
       "サンプルキー!": " &?=?&+",
       " &?empty": "",
     },
+  );
+});
+
+Deno.test("query parameter empty", async () => {
+  const handler = createHandler({
+    paths: [
+      createOperation({
+        path: "/samplePath",
+        method: "GET",
+        // deno-lint-ignore require-await
+        handler: async ({ queryParameters }) => {
+          type cases = [
+            Expect<
+              Equal<
+                typeof queryParameters,
+                never
+              >
+            >,
+          ];
+          return new Response(JSON.stringify(queryParameters), {
+            headers: {
+              "content-type": "application/json",
+            },
+          });
+        },
+      }),
+    ],
+  });
+
+  const url = new URL("https://example.com/samplePath");
+  url.searchParams.set("extra", "aaa");
+  assertEquals(
+    await (await handler(new Request(url))).json(),
+    {},
   );
 });
 
