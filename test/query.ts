@@ -11,19 +11,19 @@ Deno.test("query parameter", async () => {
         path: "/samplePath",
         method: "GET",
         queryParameters: {
-          key: query.queryRequired({
+          key: query.required({
             description: "",
-            queryItemType: query.queryString(),
+            queryItemType: query.string(),
             example: "キー",
           }),
-          "サンプルキー!": query.queryOptional({
+          "サンプルキー!": query.optional({
             description: "",
-            queryItemType: query.queryString(),
+            queryItemType: query.string(),
             example: "サンプルキーの例",
           }),
-          " &?empty": query.queryOptional({
+          " &?empty": query.optional({
             description: "",
-            queryItemType: query.queryString(),
+            queryItemType: query.string(),
             example: "こんなクエリ名を指定することはまずないけど",
           }),
         },
@@ -34,9 +34,11 @@ Deno.test("query parameter", async () => {
               Equal<
                 typeof queryParameters,
                 {
-                  key: string;
-                  "\u30B5\u30F3\u30D7\u30EB\u30AD\u30FC!": string | undefined;
-                  " &?empty": string | undefined;
+                  readonly key: string;
+                  readonly "\u30B5\u30F3\u30D7\u30EB\u30AD\u30FC!":
+                    | string
+                    | undefined;
+                  readonly " &?empty": string | undefined;
                 }
               >
             >,
@@ -111,6 +113,7 @@ Deno.test("query parameter required", async () => {
         c: string | undefined;
         d: string | undefined;
         e: string | undefined;
+        enum: "A" | "B" | "C" | undefined;
       };
     }],
     Promise<Response>
@@ -123,30 +126,35 @@ Deno.test("query parameter required", async () => {
         path: "/samplePath",
         method: "GET",
         queryParameters: {
-          a: query.queryRequired({
+          a: query.required({
             description: "",
             example: "A",
-            queryItemType: query.queryString(),
+            queryItemType: query.string(),
           }),
-          b: query.queryRequired({
+          b: query.required({
             description: "",
-            queryItemType: query.queryString(),
+            queryItemType: query.string(),
             example: "B",
           }),
-          c: query.queryRequired({
+          c: query.required({
             description: "",
             example: "C",
-            queryItemType: query.queryString(),
+            queryItemType: query.string(),
           }),
-          d: query.queryRequired({
+          d: query.required({
             description: "",
             example: "D",
-            queryItemType: query.queryString(),
+            queryItemType: query.string(),
           }),
-          e: query.queryOptional({
+          e: query.optional({
             description: "",
             example: "E",
-            queryItemType: query.queryString(),
+            queryItemType: query.string(),
+          }),
+          enum: query.optional({
+            description: "",
+            example: "A",
+            queryItemType: query.enum(["A", "B", "C"]),
           }),
         },
         handler: samplePathHandler,

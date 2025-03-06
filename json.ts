@@ -98,7 +98,9 @@ export function number(): JsonDefinition<number> {
   };
 }
 
-export function array<T>(itemSchema: JsonDefinition<T>): JsonDefinition<T[]> {
+export function array<const T>(
+  itemSchema: JsonDefinition<T>,
+): JsonDefinition<ReadonlyArray<T>> {
   return {
     decode: (json) => {
       if (Array.isArray(json)) {
@@ -139,8 +141,8 @@ export const boolean: JsonDefinition<boolean> = {
   [jsonTypeDefinitionSymbol]: jsonTypeDefinitionSymbol,
 };
 
-export function object<T>(
-  properties: { [K in keyof T]: JsonDefinition<T[K]> },
+export function object<const T>(
+  properties: { readonly [K in keyof T]: JsonDefinition<T[K]> },
 ): JsonDefinition<T> {
   return {
     decode: (json) => {

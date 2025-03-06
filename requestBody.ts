@@ -7,7 +7,7 @@ export type RequestBodyDefinition<
   Type extends unknown,
 > = {
   readonly mimeType: MimeType;
-  readonly decode: () => Type;
+  readonly decode: (request: Request) => Promise<Type>;
   // TODO JSON などスキーマを含むパターン
   readonly [requestBodySymbol]: typeof requestBodySymbol;
 };
@@ -15,10 +15,22 @@ export type RequestBodyDefinition<
 /**
  * `text/plain`
  */
-export function textPlain(): RequestBodyDefinition<"text/plain", string> {
+export function textPlain(): RequestBodyDefinition<
+  "text/plain",
+  string
+> {
+  return text("text/plain");
+}
+
+export function text<const MimeType extends string = never>(
+  mimeType: MimeType,
+): RequestBodyDefinition<
+  MimeType,
+  string
+> {
   return {
-    mimeType: "text/plain",
-    decode: () => "",
+    mimeType,
+    decode: async (request) => await request.text(),
     [requestBodySymbol]: requestBodySymbol,
   };
 }
@@ -28,17 +40,26 @@ export function textPlain(): RequestBodyDefinition<"text/plain", string> {
  */
 export function applicationOctetStream(): RequestBodyDefinition<
   "application/octet-stream",
-  Uint8Array<ArrayBuffer>
+  Uint8Array
+> {
+  return binary("application/octet-stream");
+}
+
+export function binary<
+  const MimeType extends string = never,
+>(mimeType: MimeType): RequestBodyDefinition<
+  MimeType,
+  Uint8Array
 > {
   return {
-    mimeType: "application/octet-stream",
-    decode: () => new Uint8Array(),
+    mimeType,
+    decode: async (request) => await request.bytes(),
     [requestBodySymbol]: requestBodySymbol,
   };
 }
 
 /**
- * `application/octet-stream`
+ * `application/json`
  */
 export function applicationJson<T>(
   jsonDefinition: JsonDefinition<T>,
@@ -48,7 +69,7 @@ export function applicationJson<T>(
 > {
   return {
     mimeType: "application/json",
-    decode: () => jsonDefinition.decode({}),
+    decode: async (request) => jsonDefinition.decode(await request.json()),
     [requestBodySymbol]: requestBodySymbol,
   };
 }

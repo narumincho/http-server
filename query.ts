@@ -1,4 +1,9 @@
-export type QueryValueType = "string" | "integer" | "float" | "boolean";
+export type QueryValueType =
+  | "string"
+  | "integer"
+  | "float"
+  | "boolean"
+  | "enum";
 
 const queryDefinitionSymbol = Symbol();
 const queryItemDefinitionSymbol = Symbol();
@@ -8,10 +13,11 @@ export type QueryValueTypeToTsType<type extends QueryValueType> = {
   integer: number;
   float: number;
   boolean: boolean;
+  enum: string;
 }[type];
 
 /**
- * created by {@link queryString}
+ * created by {@link string}
  */
 export type QueryDefinition<
   Type extends unknown,
@@ -33,11 +39,13 @@ export type QueryItemDefinition<in out T> = {
   readonly [queryItemDefinitionSymbol]: typeof queryItemDefinitionSymbol;
 };
 
-export function queryRequired<T>({ description, example, queryItemType }: {
-  readonly description: string;
-  readonly example: T;
-  readonly queryItemType: QueryItemDefinition<T>;
-}): QueryDefinition<T> {
+export function required<const T>(
+  { description, example, queryItemType }: {
+    readonly description: string;
+    readonly example: T;
+    readonly queryItemType: QueryItemDefinition<T>;
+  },
+): QueryDefinition<T> {
   return {
     description,
     queryBaseType: "required",
@@ -58,7 +66,7 @@ export function queryRequired<T>({ description, example, queryItemType }: {
   };
 }
 
-export function queryOptional<T>(
+export function optional<const T>(
   { description, deprecated = false, example, queryItemType }: {
     readonly description: string;
     /**
@@ -89,7 +97,7 @@ export function queryOptional<T>(
   };
 }
 
-export function queryArray<T>(
+export function array<const T>(
   { description, deprecated, example, queryItemType }: {
     readonly description: string;
     readonly deprecated: boolean;
@@ -108,7 +116,7 @@ export function queryArray<T>(
   };
 }
 
-export function queryString(): QueryItemDefinition<string> {
+export function string(): QueryItemDefinition<string> {
   return {
     typeHint: "string",
     decode: (value) => value,
@@ -116,7 +124,7 @@ export function queryString(): QueryItemDefinition<string> {
   };
 }
 
-export function queryInteger(): QueryItemDefinition<number> {
+export function integer(): QueryItemDefinition<number> {
   return {
     typeHint: "integer",
     decode: (value) => Number.parseInt(value, 10),
@@ -124,7 +132,7 @@ export function queryInteger(): QueryItemDefinition<number> {
   };
 }
 
-export function queryFloat(): QueryItemDefinition<number> {
+export function float(): QueryItemDefinition<number> {
   return {
     typeHint: "float",
     decode: (value) => Number.parseFloat(value),
@@ -132,10 +140,28 @@ export function queryFloat(): QueryItemDefinition<number> {
   };
 }
 
-export function queryBoolean(): QueryItemDefinition<boolean> {
+export function boolean(): QueryItemDefinition<boolean> {
   return {
     typeHint: "boolean",
     decode: (value) => value !== "false",
     [queryItemDefinitionSymbol]: queryItemDefinitionSymbol,
   };
 }
+
+function queryEnum<const T extends string>(
+  values: ReadonlyArray<T>,
+): QueryItemDefinition<T> {
+  return {
+    typeHint: "enum",
+    decode: (value) => {
+      const stringValues: ReadonlyArray<string> = values;
+      if (!stringValues.includes(value)) {
+        throw new Error("invalid value");
+      }
+      return value as T;
+    },
+    [queryItemDefinitionSymbol]: queryItemDefinitionSymbol,
+  };
+}
+
+export { queryEnum as enum };

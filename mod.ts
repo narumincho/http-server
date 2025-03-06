@@ -70,22 +70,8 @@ type OperationInput<
 };
 
 type RequestBodyTransform<T> = T extends RequestBodyDefinition<infer M, infer C>
-  ? { mimeType: M; content: C }
+  ? { readonly mimeType: M; readonly content: C }
   : never;
-
-type QueryParameterInput<
-  Required extends boolean,
-  Type extends QueryValueType,
-> = {
-  readonly description: string;
-  readonly required: Required;
-  readonly schema: Type;
-  readonly example?: QueryValueTypeToTsType<Type> | undefined;
-  /**
-   * @default false
-   */
-  readonly deprecated?: boolean;
-};
 
 type OperationInternal = {
   readonly path: string;
@@ -94,23 +80,31 @@ type OperationInternal = {
     string,
     QueryDefinition<unknown>
   >;
+  readonly requestBody: {
+    readonly description: string;
+    readonly content: ReadonlyArray<RequestBodyDefinition<string, unknown>>;
+  } | undefined;
   readonly handler: (
     { pathParameters, queryParameters }: {
       readonly pathParameters: ExtractParams<string>;
       readonly queryParameters: Record<string, unknown>;
+      readonly body:
+        | { readonly mimeType: string; readonly content: unknown }
+        | undefined;
     },
   ) => Promise<Response>;
   readonly [operationSymbol]: true;
 };
 
 export function createOperation<
-  Path extends string,
-  QueryParameters extends Record<string, QueryDefinition<unknown>> = never,
-  RequestBodyContent extends ReadonlyArray<
+  const Path extends string,
+  const QueryParameters extends Record<string, QueryDefinition<unknown>> =
+    never,
+  const RequestBodyContent extends ReadonlyArray<
     RequestBodyDefinition<string, unknown>
   > = never,
 >(
-  { path, method, queryParameters, handler }: OperationInput<
+  { path, method, queryParameters, requestBody, handler }: OperationInput<
     Path,
     QueryParameters,
     RequestBodyContent
@@ -127,6 +121,7 @@ export function createOperation<
         ],
       ),
     ),
+    requestBody: requestBody,
     handler: handler as (
       { pathParameters, queryParameters }: {
         readonly pathParameters: ExtractParams<string>;
@@ -214,6 +209,42 @@ const handleOperation = async (
     );
   }
 
+  const contentType = request.headers.get("content-type");
+  const needBody = operation.requestBody !== undefined &&
+    operation.requestBody.content.length > 0;
+  if (
+    needBody && request.body === null
+  ) {
+    return new Response(
+      JSON.stringify({
+        errors: [{ message: "body is required" }],
+      }),
+      {
+        headers: {
+          "content-type": "application/json",
+        },
+        status: 400,
+      },
+    );
+  }
+  const matchedRequestBodyDefinition = contentType
+    ? operation.requestBody?.content.find((e) => e.mimeType === contentType)
+    : undefined;
+
+  if (needBody && matchedRequestBodyDefinition === undefined) {
+    return new Response(
+      JSON.stringify({
+        errors: [{ message: "content-type is invalid" }],
+      }),
+      {
+        headers: {
+          "content-type": "application/json",
+        },
+        status: 415,
+      },
+    );
+  }
+
   return await operation.handler({
     pathParameters: result.pathname.groups as Record<string, never>,
     queryParameters: Object.fromEntries(
@@ -221,5 +252,11 @@ const handleOperation = async (
         e.type === "value" ? [[e.name, e.value]] : []
       ),
     ),
+    body: matchedRequestBodyDefinition
+      ? {
+        mimeType: matchedRequestBodyDefinition.mimeType,
+        content: await matchedRequestBodyDefinition.decode(request),
+      }
+      : undefined,
   });
 };

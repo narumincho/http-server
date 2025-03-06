@@ -7,7 +7,7 @@ Deno.test("body", async () => {
     paths: [
       createOperation({
         path: "/samplePath",
-        method: "GET",
+        method: "POST",
         requestBody: {
           description: "",
           content: [
@@ -16,7 +16,7 @@ Deno.test("body", async () => {
             requestBody.applicationJson(json.object({
               a: json.string(),
             })),
-          ] as const,
+          ],
         },
         // deno-lint-ignore require-await
         handler: async ({ body }) => {
@@ -25,14 +25,14 @@ Deno.test("body", async () => {
               Equal<
                 typeof body,
                 {
-                  mimeType: "text/plain";
-                  content: string;
+                  readonly mimeType: "text/plain";
+                  readonly content: string;
                 } | {
-                  mimeType: "application/octet-stream";
-                  content: Uint8Array<ArrayBuffer>;
+                  readonly mimeType: "application/octet-stream";
+                  readonly content: Uint8Array;
                 } | {
-                  mimeType: "application/json";
-                  content: { a: string };
+                  readonly mimeType: "application/json";
+                  readonly content: { a: string };
                 }
               >
             >,
@@ -47,18 +47,17 @@ Deno.test("body", async () => {
     ],
   });
 
-  const url = new URL("https://example.com/samplePath");
-  url.searchParams.set("key", "value");
-  url.searchParams.set("サンプルキー!", " &?=?&+");
-  url.searchParams.set(" &?empty", "");
-  url.searchParams.set("extra", "");
   assertEquals(
-    await (await handler(new Request(url))).json(),
-    {
-      key: "value",
-      "サンプルキー!": " &?=?&+",
-      " &?empty": "",
-    },
+    await (await handler(
+      new Request("https://example.com/samplePath", {
+        method: "POST",
+        body: "sampleText",
+        headers: {
+          "content-type": "text/plain",
+        },
+      }),
+    )).json(),
+    "sampleText",
   );
 });
 
@@ -88,10 +87,57 @@ Deno.test("body empty", async () => {
     ],
   });
 
-  const url = new URL("https://example.com/samplePath");
-  url.searchParams.set("extra", "aaa");
   assertEquals(
-    await (await handler(new Request(url))).json(),
-    {},
+    await (await handler(new Request("https://example.com/samplePath"))).json(),
+    null,
+  );
+});
+
+Deno.test("body unexpected Content-Type", async () => {
+  const handler = createHandler({
+    paths: [
+      createOperation({
+        path: "/samplePath",
+        method: "POST",
+        requestBody: {
+          description: "",
+          content: [
+            requestBody.textPlain(),
+          ],
+        },
+        // deno-lint-ignore require-await
+        handler: async ({ body }) => {
+          type cases = [
+            Expect<
+              Equal<
+                typeof body,
+                {
+                  readonly mimeType: "text/plain";
+                  readonly content: string;
+                }
+              >
+            >,
+          ];
+          return new Response(JSON.stringify(body), {
+            headers: {
+              "content-type": "application/json",
+            },
+          });
+        },
+      }),
+    ],
+  });
+
+  assertEquals(
+    (await handler(
+      new Request("https://example.com/samplePath", {
+        method: "POST",
+        body: JSON.stringify({ a: "sampleText" }),
+        headers: {
+          "content-type": "application/xml",
+        },
+      }),
+    )).status,
+    415,
   );
 });
