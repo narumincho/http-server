@@ -11,16 +11,13 @@ export function createOpenApiOperation({ handler }: {
   });
 }
 
-export function createOpenApiOperationHandler({ paths }: {
+export function createOpenApi({ paths }: {
   readonly paths: ReadonlyArray<OperationInternal>;
-}): () => OpenAPI3 {
-  const openApiOperationHandler = (): OpenAPI3 => {
-    return {
-      openapi: "3.1.1",
-      info: {
-        title: "",
-      },
-    };
+}): OpenAPI3 {
+  return {
+    openapi: "3.1.1",
+    info: {
+      title: "",
+    },
   };
-  return openApiOperationHandler;
 }
