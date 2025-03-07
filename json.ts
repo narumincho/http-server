@@ -1,4 +1,4 @@
-import { SchemaObject } from "npm:openapi-typescript";
+import type { SchemaObject } from "npm:openapi-typescript";
 
 type JsonValue =
   | string

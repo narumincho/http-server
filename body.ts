@@ -1,21 +1,20 @@
 import { JsonDefinition } from "./json.ts";
 
-const requestBodySymbol = Symbol();
+const bodySymbol = Symbol();
 
-export type RequestBodyDefinition<
+export type BodyDefinition<
   MimeType extends string,
   Type extends unknown,
 > = {
   readonly mimeType: MimeType;
   readonly decode: (request: Request) => Promise<Type>;
-  // TODO JSON などスキーマを含むパターン
-  readonly [requestBodySymbol]: typeof requestBodySymbol;
+  readonly [bodySymbol]: typeof bodySymbol;
 };
 
 /**
  * `text/plain`
  */
-export function textPlain(): RequestBodyDefinition<
+export function textPlain(): BodyDefinition<
   "text/plain",
   string
 > {
@@ -24,21 +23,21 @@ export function textPlain(): RequestBodyDefinition<
 
 export function text<const MimeType extends string = never>(
   mimeType: MimeType,
-): RequestBodyDefinition<
+): BodyDefinition<
   MimeType,
   string
 > {
   return {
     mimeType,
     decode: async (request) => await request.text(),
-    [requestBodySymbol]: requestBodySymbol,
+    [bodySymbol]: bodySymbol,
   };
 }
 
 /**
  * `application/octet-stream`
  */
-export function applicationOctetStream(): RequestBodyDefinition<
+export function applicationOctetStream(): BodyDefinition<
   "application/octet-stream",
   Uint8Array
 > {
@@ -47,14 +46,14 @@ export function applicationOctetStream(): RequestBodyDefinition<
 
 export function binary<
   const MimeType extends string = never,
->(mimeType: MimeType): RequestBodyDefinition<
+>(mimeType: MimeType): BodyDefinition<
   MimeType,
   Uint8Array
 > {
   return {
     mimeType,
     decode: async (request) => await request.bytes(),
-    [requestBodySymbol]: requestBodySymbol,
+    [bodySymbol]: bodySymbol,
   };
 }
 
@@ -63,13 +62,13 @@ export function binary<
  */
 export function applicationJson<T>(
   jsonDefinition: JsonDefinition<T>,
-): RequestBodyDefinition<
+): BodyDefinition<
   "application/json",
   T
 > {
   return {
     mimeType: "application/json",
     decode: async (request) => jsonDefinition.decode(await request.json()),
-    [requestBodySymbol]: requestBodySymbol,
+    [bodySymbol]: bodySymbol,
   };
 }

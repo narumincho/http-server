@@ -1,17 +1,26 @@
-/**
- * https://spec.openapis.org/oas/latest.html#openapi-object
- */
-export type OpenAPIObject = {
-  readonly openapi: "3.1.1";
-  readonly info: InfoObject;
-};
+import { OpenAPI3 } from "npm:openapi-typescript";
+import { OperationInternal } from "./operation.ts";
+import { operation } from "./mod.ts";
 
-/**
- * https://spec.openapis.org/oas/latest.html#info-object
- */
-export type InfoObject = {
-  readonly title: string;
-  readonly summary?: string | null;
-  readonly description?: string | null;
-  readonly version: string;
-};
+export function createOpenApiOperation({ handler }: {
+  readonly handler: () => OpenAPI3;
+}) {
+  return operation.get({
+    path: "/openapi",
+    handler,
+  });
+}
+
+export function createOpenApiOperationHandler({ paths }: {
+  readonly paths: ReadonlyArray<OperationInternal>;
+}): () => OpenAPI3 {
+  const openApiOperationHandler = (): OpenAPI3 => {
+    return {
+      openapi: "3.1.1",
+      info: {
+        title: "",
+      },
+    };
+  };
+  return openApiOperationHandler;
+}

@@ -1,6 +1,6 @@
 import type { Equal, Expect } from "npm:@type-challenges/utils";
 import { assertEquals } from "jsr:@std/assert";
-import { createHandler, createOperation, json, requestBody } from "../mod.ts";
+import { body, createHandler, createOperation, json } from "../mod.ts";
 
 Deno.test("body", async () => {
   const handler = createHandler({
@@ -11,9 +11,9 @@ Deno.test("body", async () => {
         requestBody: {
           description: "",
           content: [
-            requestBody.textPlain(),
-            requestBody.applicationOctetStream(),
-            requestBody.applicationJson(json.object({
+            body.textPlain(),
+            body.applicationOctetStream(),
+            body.applicationJson(json.object({
               a: json.string(),
             })),
           ],
@@ -102,7 +102,7 @@ Deno.test("body unexpected Content-Type", async () => {
         requestBody: {
           description: "",
           content: [
-            requestBody.textPlain(),
+            body.textPlain(),
           ],
         },
         // deno-lint-ignore require-await

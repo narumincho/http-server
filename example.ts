@@ -1,12 +1,11 @@
-import { createHandler, createOperation } from "./mod.ts";
+import { body, createHandler, json, operation, response } from "./mod.ts";
 import { boolean, optional, required, string } from "./query.ts";
 
 Deno.serve(
   createHandler({
     paths: [
-      createOperation({
+      operation.get({
         path: "/items",
-        method: "GET",
         queryParameters: {
           filter: optional({
             description: "フィルターのパラメーター",
@@ -24,23 +23,46 @@ Deno.serve(
             example: "サンプル必須!",
           }),
         },
+        responses: [
+          response.ok({
+            description: "取得結果を返します",
+            content: [
+              body.applicationJson(json.array(json.object({
+                name: json.string(),
+              }))),
+              body.applicationOctetStream(),
+            ],
+          }),
+        ],
         handler: async ({ pathParameters, queryParameters }) => {
           console.log(pathParameters, queryParameters);
-          return new Response();
+          return {
+            statusCode: "200",
+            content: { mimeType: "application/json", content: [{ name: "" }] },
+          } as const;
         },
       }),
-      createOperation({
+      operation.post({
         path: "/items",
-        method: "POST",
         queryParameters: {},
+        responses: [response.ok({
+          description: "結果を返します",
+          content: [
+            body.applicationJson(json.object({
+              wip: json.string(),
+            })),
+          ],
+        })],
         handler: async ({ pathParameters, queryParameters }) => {
           console.log(pathParameters, queryParameters);
-          return new Response();
+          return {
+            statusCode: "200",
+            content: { mimeType: "application/json", content: { wip: "123" } },
+          } as const;
         },
       }),
-      createOperation({
+      operation.get({
         path: "/items/:id",
-        method: "GET",
         queryParameters: {
           withDetail: optional({
             description: "詳細情報も取得するかどうか",
@@ -48,27 +70,56 @@ Deno.serve(
             example: false,
           }),
         },
+        responses: [response.ok({
+          description: "結果を返します",
+          content: [
+            body.applicationJson(json.object({
+              wip: json.string(),
+            })),
+          ],
+        })],
         handler: async ({ pathParameters, queryParameters }) => {
           console.log(pathParameters, queryParameters);
-          return new Response();
+          return {
+            statusCode: "200",
+            content: { mimeType: "application/json", content: { wip: "123" } },
+          } as const;
         },
       }),
-      createOperation({
+      operation.patch({
         path: "/items/:id",
-        method: "PATCH",
-        queryParameters: {},
+        responses: [response.ok({
+          description: "結果を返します",
+          content: [
+            body.applicationJson(json.object({
+              wip: json.string(),
+            })),
+          ],
+        })],
         handler: async ({ pathParameters, queryParameters }) => {
           console.log(pathParameters, queryParameters);
-          return new Response();
+          return {
+            statusCode: "200",
+            content: { mimeType: "application/json", content: { wip: "123" } },
+          } as const;
         },
       }),
-      createOperation({
+      operation.delete({
         path: "/items/:id",
-        method: "DELETE",
-        queryParameters: {},
+        responses: [response.ok({
+          description: "結果を返します",
+          content: [
+            body.applicationJson(json.object({
+              wip: json.string(),
+            })),
+          ],
+        })],
         handler: async ({ pathParameters, queryParameters }) => {
           console.log(pathParameters, queryParameters);
-          return new Response();
+          return {
+            statusCode: "200",
+            content: { mimeType: "application/json", content: { wip: "123" } },
+          } as const;
         },
       }),
     ],
