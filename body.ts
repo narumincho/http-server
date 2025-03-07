@@ -8,6 +8,7 @@ export type BodyDefinition<
 > = {
   readonly mimeType: MimeType;
   readonly decode: (request: Request) => Promise<Type>;
+  readonly encode: (request: Type) => Promise<BodyInit>;
   readonly [bodySymbol]: typeof bodySymbol;
 };
 
@@ -30,6 +31,7 @@ export function text<const MimeType extends string = never>(
   return {
     mimeType,
     decode: async (request) => await request.text(),
+    encode: async (text) => text,
     [bodySymbol]: bodySymbol,
   };
 }
@@ -53,6 +55,7 @@ export function binary<
   return {
     mimeType,
     decode: async (request) => await request.bytes(),
+    encode: async (binary) => binary,
     [bodySymbol]: bodySymbol,
   };
 }
@@ -69,6 +72,7 @@ export function applicationJson<T>(
   return {
     mimeType: "application/json",
     decode: async (request) => jsonDefinition.decode(await request.json()),
+    encode: async (json) => JSON.stringify(json),
     [bodySymbol]: bodySymbol,
   };
 }

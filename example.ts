@@ -122,7 +122,14 @@ const paths: Parameters<typeof createHandler>["0"]["paths"] = [
     },
   }),
   createOpenApiOperation({
-    handler: () => createOpenApi({ paths }),
+    handler: async () =>
+      createOpenApi({
+        info: {
+          title: "@narumincho/http-server example",
+          version: "0.0.1",
+        },
+        paths,
+      }),
   }),
 ];
 

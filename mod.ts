@@ -129,6 +129,25 @@ const handleOperation = async (
       }
       : undefined,
   });
-  console.log(responseValue);
-  return new Response();
+  const matchedResponseObject = operation.responses.find((responseSchema) =>
+    responseSchema.statusCode === responseValue.statusCode
+  );
+  if (!matchedResponseObject) {
+    throw new Error(
+      `status code error. schema expected = ${
+        operation.responses.map((responseSchema) => responseSchema.statusCode)
+      }. but got ${responseValue.statusCode}`,
+    );
+  }
+  const matchedBody = matchedResponseObject.content.find((body) =>
+    body.mimeType === responseValue.content.mimeType
+  );
+  if (!matchedBody) {
+    throw new Error("internal error. unknown mimeType");
+  }
+  return new Response(await matchedBody.encode(responseValue.content.content), {
+    headers: {
+      "Content-Type": responseValue.content.mimeType,
+    },
+  });
 };
