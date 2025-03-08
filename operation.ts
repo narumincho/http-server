@@ -37,7 +37,7 @@ type OperationInput<
   Responses extends ReadonlyArray<
     ResponseObjectDefinition<
       string,
-      ReadonlyArray<BodyDefinition<string, unknown>>
+      ReadonlyArray<BodyDefinition<string, any>>
     >
   >,
 > = {
@@ -69,13 +69,19 @@ type OperationInput<
   ) => Promise<ResponseTransform<Responses[number]>>;
 };
 
-type BodyTransform<T> = T extends BodyDefinition<infer M, infer C>
+type BodyTransform<T extends BodyDefinition<string, any>> = T extends
+  BodyDefinition<infer M, infer C>
   ? { readonly mimeType: M; readonly content: C }
-  : never;
+  : `expected BodyDefinition<M, C>`;
 
-type ResponseTransform<T> = T extends ResponseObjectDefinition<infer S, infer C>
-  ? { readonly statusCode: S; readonly content: BodyTransform<C[number]> }
-  : never;
+export type ResponseTransform<
+  T extends ResponseObjectDefinition<
+    string,
+    ReadonlyArray<BodyDefinition<string, any>>
+  >,
+> = T extends ResponseObjectDefinition<infer S, infer B>
+  ? { readonly statusCode: S; readonly content: BodyTransform<B[number]> }
+  : `expected ResponseObjectDefinition<S, B>`;
 
 export type OperationInternal = {
   readonly path: string;
@@ -124,7 +130,7 @@ export function createOperation<
   const Responses extends ReadonlyArray<
     ResponseObjectDefinition<
       string,
-      ReadonlyArray<BodyDefinition<string, unknown>>
+      ReadonlyArray<BodyDefinition<string, any>>
     >
   > = never,
 >(
@@ -177,7 +183,7 @@ export function get<
   const Responses extends ReadonlyArray<
     ResponseObjectDefinition<
       string,
-      ReadonlyArray<BodyDefinition<string, unknown>>
+      ReadonlyArray<BodyDefinition<string, any>>
     >
   > = never,
 >(
@@ -210,7 +216,7 @@ export function post<
   const Responses extends ReadonlyArray<
     ResponseObjectDefinition<
       string,
-      ReadonlyArray<BodyDefinition<string, unknown>>
+      ReadonlyArray<BodyDefinition<string, any>>
     >
   > = never,
 >(
@@ -244,7 +250,7 @@ function delete_<
   const Responses extends ReadonlyArray<
     ResponseObjectDefinition<
       string,
-      ReadonlyArray<BodyDefinition<string, unknown>>
+      ReadonlyArray<BodyDefinition<string, any>>
     >
   > = never,
 >(
@@ -279,7 +285,7 @@ export function patch<
   const Responses extends ReadonlyArray<
     ResponseObjectDefinition<
       string,
-      ReadonlyArray<BodyDefinition<string, unknown>>
+      ReadonlyArray<BodyDefinition<string, any>>
     >
   > = never,
 >(

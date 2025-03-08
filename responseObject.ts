@@ -4,7 +4,7 @@ const responseObjectDefinitionSymbol = Symbol();
 
 export type ResponseObjectDefinition<
   StatusCode extends string,
-  BodyDefinitions extends ReadonlyArray<BodyDefinition<string, unknown>>,
+  BodyDefinitions extends ReadonlyArray<BodyDefinition<string, any>>,
 > = {
   readonly statusCode: StatusCode;
   readonly description: string;
@@ -17,7 +17,7 @@ export type ResponseObjectDefinition<
  * status 200
  */
 export function ok<
-  const BodyDefinitions extends ReadonlyArray<BodyDefinition<string, unknown>> =
+  const BodyDefinitions extends ReadonlyArray<BodyDefinition<string, any>> =
     never,
 >(
   { description, content }: {
