@@ -266,7 +266,7 @@ function delete_<
 ): OperationInternal {
   return createOperation<Path, QueryParameters, RequestBodyContent, Responses>({
     path,
-    method: "GET",
+    method: "DELETE",
     queryParameters,
     responses,
     handler,
