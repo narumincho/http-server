@@ -5,10 +5,10 @@ import {
   PathItemObject,
 } from "npm:openapi-typescript";
 import { OperationInternal } from "./operation.ts";
-import { body, json, operation } from "./mod.ts";
-import { ok } from "./responseObject.ts";
+import { body, json, operation, response } from "./mod.ts";
 
-export function createOpenApiOperation({ handler }: {
+export const createOpenApiOperation = ({ path, handler }: {
+  readonly path: string;
   readonly handler: () => Promise<{
     readonly statusCode: "200";
     readonly content: {
@@ -16,10 +16,10 @@ export function createOpenApiOperation({ handler }: {
       readonly content: OpenAPI3;
     };
   }>;
-}) {
-  return operation.get({
-    path: "/openapi",
-    responses: [ok({
+}): OperationInternal =>
+  operation.get({
+    path,
+    responses: [response.ok({
       description: "Open API schema",
       content: [body.applicationJson(json.object({
         openapi: json.string(),
@@ -27,7 +27,6 @@ export function createOpenApiOperation({ handler }: {
     })],
     handler,
   });
-}
 
 export function createOpenApi({ info, operations: paths }: {
   readonly info: InfoObject;

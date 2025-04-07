@@ -1,6 +1,7 @@
 import { body, createHandler, json, operation, response } from "./mod.ts";
 import { boolean, optional, required, string } from "./query.ts";
 import { createOpenApi, createOpenApiOperation } from "./openApi.ts";
+import { createRedocOperation } from "./redoc.ts";
 
 const operations: Parameters<typeof createHandler>["0"]["operations"] = [
   operation.get({
@@ -122,15 +123,17 @@ const operations: Parameters<typeof createHandler>["0"]["operations"] = [
     },
   }),
   createOpenApiOperation({
+    path: "/openapi",
     handler: async () =>
       createOpenApi({
         info: {
           title: "@narumincho/http-server example",
           version: "0.0.1",
         },
-        operations: operations,
+        operations,
       }),
   }),
+  createRedocOperation({ path: "/doc", openApiPath: "/openapi" }),
 ];
 
 Deno.serve(
