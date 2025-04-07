@@ -1,6 +1,13 @@
 import { assertEquals } from "jsr:@std/assert";
 import { spy } from "jsr:@std/testing/mock";
-import { body, createHandler, json, operation, response } from "../mod.ts";
+import {
+  body,
+  createHandler,
+  json,
+  operation,
+  response,
+  responseHelper,
+} from "../mod.ts";
 import { query } from "../mod.ts";
 import { Equal, Expect } from "npm:@type-challenges/utils";
 
@@ -46,10 +53,7 @@ Deno.test("query parameter", async () => {
               >
             >,
           ];
-          return {
-            statusCode: "200",
-            content: { mimeType: "application/json", content: queryParameters },
-          } as const;
+          return responseHelper.ok("application/json", queryParameters);
         },
       }),
     ],
@@ -89,13 +93,7 @@ Deno.test("query parameter empty", async () => {
               >
             >,
           ];
-          return {
-            statusCode: "200",
-            content: {
-              mimeType: "application/json",
-              content: queryParameters,
-            },
-          } as const;
+          return responseHelper.ok("application/json", queryParameters);
         },
       }),
     ],

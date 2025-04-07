@@ -1,4 +1,11 @@
-import { body, createHandler, json, operation, response } from "./mod.ts";
+import {
+  body,
+  createHandler,
+  json,
+  operation,
+  response,
+  responseHelper,
+} from "./mod.ts";
 import { boolean, optional, required, string } from "./query.ts";
 import { createOpenApi, createOpenApiOperation } from "./openApi.ts";
 import { createRedocOperation } from "./redoc.ts";
@@ -36,10 +43,7 @@ const operations: Parameters<typeof createHandler>["0"]["operations"] = [
     ],
     handler: async ({ pathParameters, queryParameters }) => {
       console.log(pathParameters, queryParameters);
-      return {
-        statusCode: "200",
-        content: { mimeType: "application/json", content: [{ name: "" }] },
-      } as const;
+      return responseHelper.ok("application/json", [{ name: "" }]);
     },
   }),
   operation.post({
@@ -55,10 +59,7 @@ const operations: Parameters<typeof createHandler>["0"]["operations"] = [
     })],
     handler: async ({ pathParameters, queryParameters }) => {
       console.log(pathParameters, queryParameters);
-      return {
-        statusCode: "200",
-        content: { mimeType: "application/json", content: { wip: "123" } },
-      } as const;
+      return responseHelper.ok("application/json", { wip: "123" });
     },
   }),
   operation.get({
@@ -80,10 +81,7 @@ const operations: Parameters<typeof createHandler>["0"]["operations"] = [
     })],
     handler: async ({ pathParameters, queryParameters }) => {
       console.log(pathParameters, queryParameters);
-      return {
-        statusCode: "200",
-        content: { mimeType: "application/json", content: { wip: "123" } },
-      } as const;
+      return responseHelper.ok("application/json", { wip: "123" });
     },
   }),
   operation.patch({
@@ -98,10 +96,7 @@ const operations: Parameters<typeof createHandler>["0"]["operations"] = [
     })],
     handler: async ({ pathParameters, queryParameters }) => {
       console.log(pathParameters, queryParameters);
-      return {
-        statusCode: "200",
-        content: { mimeType: "application/json", content: { wip: "123" } },
-      } as const;
+      return responseHelper.ok("application/json", { wip: "123" });
     },
   }),
   operation.delete({
@@ -116,10 +111,10 @@ const operations: Parameters<typeof createHandler>["0"]["operations"] = [
     })],
     handler: async ({ pathParameters, queryParameters }) => {
       console.log(pathParameters, queryParameters);
-      return {
-        statusCode: "200",
-        content: { mimeType: "application/json", content: { wip: "123" } },
-      } as const;
+      return responseHelper.ok(
+        "application/json",
+        { wip: "123" },
+      );
     },
   }),
   createOpenApiOperation({

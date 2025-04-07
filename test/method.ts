@@ -1,4 +1,11 @@
-import { body, createHandler, json, operation, response } from "../mod.ts";
+import {
+  body,
+  createHandler,
+  json,
+  operation,
+  response,
+  responseHelper,
+} from "../mod.ts";
 import { assertEquals } from "jsr:@std/assert";
 
 Deno.test("Unrecognized method respond with the 501 status code", async () => {
@@ -12,13 +19,7 @@ Deno.test("Unrecognized method respond with the 501 status code", async () => {
         })],
         // deno-lint-ignore require-await
         handler: async () => {
-          return {
-            statusCode: "200",
-            content: {
-              mimeType: "application/json",
-              content: {},
-            },
-          } as const;
+          return responseHelper.ok("application/json", {});
         },
       }),
     ],
@@ -53,13 +54,7 @@ Deno.test("recognized method respond but not allowed for the target resource res
         ],
         // deno-lint-ignore require-await
         handler: async () => {
-          return {
-            statusCode: "200",
-            content: {
-              mimeType: "application/json",
-              content: {},
-            },
-          } as const;
+          return responseHelper.ok("application/json", {});
         },
       }),
     ],

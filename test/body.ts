@@ -1,6 +1,13 @@
 import type { Equal, Expect } from "npm:@type-challenges/utils";
 import { assertEquals } from "jsr:@std/assert";
-import { body, createHandler, json, operation, response } from "../mod.ts";
+import {
+  body,
+  createHandler,
+  json,
+  operation,
+  response,
+  responseHelper,
+} from "../mod.ts";
 
 Deno.test("body", async () => {
   const handler = createHandler({
@@ -42,13 +49,7 @@ Deno.test("body", async () => {
               >
             >,
           ];
-          return {
-            statusCode: "200",
-            content: {
-              mimeType: "application/json",
-              content: {},
-            },
-          } as const;
+          return responseHelper.ok("application/json", {});
         },
       }),
     ],
@@ -89,13 +90,7 @@ Deno.test("body empty", async () => {
               >
             >,
           ];
-          return {
-            statusCode: "200",
-            content: {
-              mimeType: "application/json",
-              content: {},
-            },
-          } as const;
+          return responseHelper.ok("application/json", {});
         },
       }),
     ],
@@ -137,13 +132,7 @@ Deno.test("body unexpected Content-Type", async () => {
               >
             >,
           ];
-          return {
-            statusCode: "200",
-            content: {
-              mimeType: "application/json",
-              content: {},
-            },
-          } as const;
+          return responseHelper.ok("application/json", {});
         },
       }),
     ],
