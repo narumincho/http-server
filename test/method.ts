@@ -1,14 +1,25 @@
-import { createHandler, createOperation } from "../mod.ts";
+import { body, createHandler, json, operation, response } from "../mod.ts";
 import { assertEquals } from "jsr:@std/assert";
 
 Deno.test("Unrecognized method respond with the 501 status code", async () => {
   const handler = createHandler({
-    paths: [
-      createOperation({
+    operations: [
+      operation.get({
         path: "/samplePath",
-        method: "GET",
+        responses: [response.ok({
+          description: "",
+          content: [body.applicationJson(json.object({}))],
+        })],
         // deno-lint-ignore require-await
-        handler: async () => new Response(),
+        handler: async () => {
+          return {
+            statusCode: "200",
+            content: {
+              mimeType: "application/json",
+              content: {},
+            },
+          } as const;
+        },
       }),
     ],
   });
@@ -30,13 +41,26 @@ Deno.test("Unrecognized method respond with the 501 status code", async () => {
 
 Deno.test("recognized method respond but not allowed for the target resource respond with 405 status code", async () => {
   const handler = createHandler({
-    paths: [
-      createOperation({
+    operations: [
+      operation.get({
         path: "/samplePath",
-        method: "GET",
         queryParameters: {},
+        responses: [
+          response.ok({
+            description: "",
+            content: [body.applicationJson(json.object({}))],
+          }),
+        ],
         // deno-lint-ignore require-await
-        handler: async () => new Response(),
+        handler: async () => {
+          return {
+            statusCode: "200",
+            content: {
+              mimeType: "application/json",
+              content: {},
+            },
+          } as const;
+        },
       }),
     ],
   });

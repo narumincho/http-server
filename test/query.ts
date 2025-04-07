@@ -1,15 +1,14 @@
 import { assertEquals } from "jsr:@std/assert";
 import { spy } from "jsr:@std/testing/mock";
-import { createHandler, createOperation } from "../mod.ts";
+import { body, createHandler, json, operation, response } from "../mod.ts";
 import { query } from "../mod.ts";
 import { Equal, Expect } from "npm:@type-challenges/utils";
 
 Deno.test("query parameter", async () => {
   const handler = createHandler({
-    paths: [
-      createOperation({
+    operations: [
+      operation.get({
         path: "/samplePath",
-        method: "GET",
         queryParameters: {
           key: query.required({
             description: "",
@@ -27,6 +26,10 @@ Deno.test("query parameter", async () => {
             example: "こんなクエリ名を指定することはまずないけど",
           }),
         },
+        responses: [response.ok({
+          description: "",
+          content: [body.applicationJson(json.object({}))],
+        })],
         // deno-lint-ignore require-await
         handler: async ({ queryParameters }) => {
           type cases = [
@@ -43,11 +46,10 @@ Deno.test("query parameter", async () => {
               >
             >,
           ];
-          return new Response(JSON.stringify(queryParameters), {
-            headers: {
-              "content-type": "application/json",
-            },
-          });
+          return {
+            statusCode: "200",
+            content: { mimeType: "application/json", content: queryParameters },
+          } as const;
         },
       }),
     ],
@@ -70,10 +72,13 @@ Deno.test("query parameter", async () => {
 
 Deno.test("query parameter empty", async () => {
   const handler = createHandler({
-    paths: [
-      createOperation({
+    operations: [
+      operation.get({
         path: "/samplePath",
-        method: "GET",
+        responses: [response.ok({
+          description: "",
+          content: [body.applicationJson(json.object({}))],
+        })],
         // deno-lint-ignore require-await
         handler: async ({ queryParameters }) => {
           type cases = [
@@ -84,11 +89,13 @@ Deno.test("query parameter empty", async () => {
               >
             >,
           ];
-          return new Response(JSON.stringify(queryParameters), {
-            headers: {
-              "content-type": "application/json",
+          return {
+            statusCode: "200",
+            content: {
+              mimeType: "application/json",
+              content: queryParameters,
             },
-          });
+          } as const;
         },
       }),
     ],
@@ -116,15 +123,25 @@ Deno.test("query parameter required", async () => {
         enum: "A" | "B" | "C" | undefined;
       };
     }],
-    Promise<Response>
+    Promise<
+      {
+        statusCode: "200";
+        content: { mimeType: "application/json"; content: unknown };
+      }
+    >
   > // deno-lint-ignore require-await
-  (async () => new Response());
+  (async () => ({
+    statusCode: "200",
+    content: {
+      mimeType: "application/json",
+      content: {},
+    },
+  }));
 
   const handler = createHandler({
-    paths: [
-      createOperation({
+    operations: [
+      operation.get({
         path: "/samplePath",
-        method: "GET",
         queryParameters: {
           a: query.required({
             description: "",
@@ -157,6 +174,10 @@ Deno.test("query parameter required", async () => {
             queryItemType: query.enum(["A", "B", "C"]),
           }),
         },
+        responses: [response.ok({
+          description: "",
+          content: [body.applicationJson(json.object({}))],
+        })],
         handler: samplePathHandler,
       }),
     ],
@@ -166,10 +187,10 @@ Deno.test("query parameter required", async () => {
   url.searchParams.set("a", "A");
   url.searchParams.set("b", "B");
 
-  const response = await handler(new Request(url));
+  const handlerResponse = await handler(new Request(url));
   // assertSpyCall(samplePathHandler, 0);
-  assertEquals(response.status, 400);
-  assertEquals(await response.json(), {
+  assertEquals(handlerResponse.status, 400);
+  assertEquals(await handlerResponse.json(), {
     errors: [
       {
         message: "Error: must be specified in query c",

@@ -1,13 +1,12 @@
 import type { Equal, Expect } from "npm:@type-challenges/utils";
 import { assertEquals } from "jsr:@std/assert";
-import { body, createHandler, createOperation, json } from "../mod.ts";
+import { body, createHandler, json, operation, response } from "../mod.ts";
 
 Deno.test("body", async () => {
   const handler = createHandler({
-    paths: [
-      createOperation({
+    operations: [
+      operation.post({
         path: "/samplePath",
-        method: "POST",
         requestBody: {
           description: "",
           content: [
@@ -18,6 +17,12 @@ Deno.test("body", async () => {
             })),
           ],
         },
+        responses: [
+          response.ok({
+            description: "",
+            content: [body.applicationJson(json.object({}))],
+          }),
+        ],
         // deno-lint-ignore require-await
         handler: async ({ body }) => {
           type cases = [
@@ -37,11 +42,13 @@ Deno.test("body", async () => {
               >
             >,
           ];
-          return new Response(JSON.stringify(body), {
-            headers: {
-              "content-type": "application/json",
+          return {
+            statusCode: "200",
+            content: {
+              mimeType: "application/json",
+              content: {},
             },
-          });
+          } as const;
         },
       }),
     ],
@@ -63,10 +70,15 @@ Deno.test("body", async () => {
 
 Deno.test("body empty", async () => {
   const handler = createHandler({
-    paths: [
-      createOperation({
+    operations: [
+      operation.get({
         path: "/samplePath",
-        method: "GET",
+        responses: [
+          response.ok({
+            description: "",
+            content: [body.applicationJson(json.object({}))],
+          }),
+        ],
         // deno-lint-ignore require-await
         handler: async ({ body }) => {
           type cases = [
@@ -77,11 +89,13 @@ Deno.test("body empty", async () => {
               >
             >,
           ];
-          return new Response(JSON.stringify(body), {
-            headers: {
-              "content-type": "application/json",
+          return {
+            statusCode: "200",
+            content: {
+              mimeType: "application/json",
+              content: {},
             },
-          });
+          } as const;
         },
       }),
     ],
@@ -95,16 +109,21 @@ Deno.test("body empty", async () => {
 
 Deno.test("body unexpected Content-Type", async () => {
   const handler = createHandler({
-    paths: [
-      createOperation({
+    operations: [
+      operation.post({
         path: "/samplePath",
-        method: "POST",
         requestBody: {
           description: "",
           content: [
             body.textPlain(),
           ],
         },
+        responses: [
+          response.ok({
+            description: "",
+            content: [body.applicationJson(json.object({}))],
+          }),
+        ],
         // deno-lint-ignore require-await
         handler: async ({ body }) => {
           type cases = [
@@ -118,11 +137,13 @@ Deno.test("body unexpected Content-Type", async () => {
               >
             >,
           ];
-          return new Response(JSON.stringify(body), {
-            headers: {
-              "content-type": "application/json",
+          return {
+            statusCode: "200",
+            content: {
+              mimeType: "application/json",
+              content: {},
             },
-          });
+          } as const;
         },
       }),
     ],
