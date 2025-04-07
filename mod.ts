@@ -7,8 +7,8 @@ export * as operation from "./operation.ts";
 export * as response from "./responseObject.ts";
 
 export const createHandler = (
-  { paths }: {
-    readonly paths: ReadonlyArray<OperationInternal>;
+  { operations }: {
+    readonly operations: ReadonlyArray<OperationInternal>;
   },
 ): (request: Request) => Promise<Response> => {
   return async (request): Promise<Response> => {
@@ -16,7 +16,7 @@ export const createHandler = (
       string,
       ReadonlyArray<OperationInternal>
     > = Map
-      .groupBy(paths, (operation) => operation.path);
+      .groupBy(operations, (operation) => operation.path);
     for (const [path, operations] of pathsGroupByPath) {
       const urlPattern = new URLPattern({ pathname: path });
       const result = urlPattern.exec(request.url);

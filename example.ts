@@ -2,7 +2,7 @@ import { body, createHandler, json, operation, response } from "./mod.ts";
 import { boolean, optional, required, string } from "./query.ts";
 import { createOpenApi, createOpenApiOperation } from "./openApi.ts";
 
-const paths: Parameters<typeof createHandler>["0"]["paths"] = [
+const operations: Parameters<typeof createHandler>["0"]["operations"] = [
   operation.get({
     path: "/items",
     queryParameters: {
@@ -128,13 +128,13 @@ const paths: Parameters<typeof createHandler>["0"]["paths"] = [
           title: "@narumincho/http-server example",
           version: "0.0.1",
         },
-        paths,
+        operations: operations,
       }),
   }),
 ];
 
 Deno.serve(
   createHandler({
-    paths,
+    operations,
   }),
 );
