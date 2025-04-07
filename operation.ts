@@ -32,7 +32,7 @@ type OperationInput<
   Path extends string,
   QueryParameters extends Record<string, QueryDefinition<unknown>>,
   RequestBodyContent extends ReadonlyArray<
-    BodyDefinition<string, unknown>
+    BodyDefinition<string, any>
   >,
   Responses extends ReadonlyArray<
     ResponseObjectDefinition<
@@ -92,12 +92,12 @@ export type OperationInternal = {
   >;
   readonly requestBody: {
     readonly description: string;
-    readonly content: ReadonlyArray<BodyDefinition<string, unknown>>;
+    readonly content: ReadonlyArray<BodyDefinition<string, any>>;
   } | undefined;
   readonly responses: ReadonlyArray<
     ResponseObjectDefinition<
       string,
-      ReadonlyArray<BodyDefinition<string, unknown>>
+      ReadonlyArray<BodyDefinition<string, any>>
     >
   >;
   readonly handler: (
@@ -125,7 +125,7 @@ export function createOperation<
   const QueryParameters extends Record<string, QueryDefinition<unknown>> =
     never,
   const RequestBodyContent extends ReadonlyArray<
-    BodyDefinition<string, unknown>
+    BodyDefinition<string, any>
   > = never,
   const Responses extends ReadonlyArray<
     ResponseObjectDefinition<
@@ -211,7 +211,7 @@ export function post<
   const QueryParameters extends Record<string, QueryDefinition<unknown>> =
     never,
   const RequestBodyContent extends ReadonlyArray<
-    BodyDefinition<string, unknown>
+    BodyDefinition<string, any>
   > = never,
   const Responses extends ReadonlyArray<
     ResponseObjectDefinition<
@@ -245,7 +245,7 @@ function delete_<
   const QueryParameters extends Record<string, QueryDefinition<unknown>> =
     never,
   const RequestBodyContent extends ReadonlyArray<
-    BodyDefinition<string, unknown>
+    BodyDefinition<string, any>
   > = never,
   const Responses extends ReadonlyArray<
     ResponseObjectDefinition<
@@ -280,7 +280,7 @@ export function patch<
   const QueryParameters extends Record<string, QueryDefinition<unknown>> =
     never,
   const RequestBodyContent extends ReadonlyArray<
-    BodyDefinition<string, unknown>
+    BodyDefinition<string, any>
   > = never,
   const Responses extends ReadonlyArray<
     ResponseObjectDefinition<
