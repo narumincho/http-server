@@ -4,7 +4,7 @@ export * as json from "./json.ts";
 export * as query from "./query.ts";
 export * as body from "./body.ts";
 export * as operation from "./operation.ts";
-export * as response from "./responseObject.ts";
+export * as response from "./response.ts";
 
 export const createHandler = (
   { operations }: {

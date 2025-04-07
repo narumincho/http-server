@@ -1,6 +1,6 @@
 import { QueryDefinition } from "./query.ts";
 import { BodyDefinition } from "./body.ts";
-import { ResponseObjectDefinition } from "./responseObject.ts";
+import { ResponseObjectDefinition } from "./response.ts";
 
 const supportedHttpMethod = [
   "GET",

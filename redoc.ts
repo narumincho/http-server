@@ -1,4 +1,4 @@
-import { body, json, operation, response } from "./mod.ts";
+import { body, operation, response } from "./mod.ts";
 import { OperationInternal } from "./operation.ts";
 
 export const createRedocOperation = (
