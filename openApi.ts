@@ -1,8 +1,11 @@
 import {
   InfoObject,
+  MediaTypeObject,
   OpenAPI3,
+  OperationObject,
   ParameterObject,
-  PathItemObject,
+  RequestBodyObject,
+  ResponseObject,
 } from "npm:openapi-typescript";
 import { OperationInternal } from "./operation.ts";
 import { body, json, operation, response } from "./mod.ts";
@@ -50,24 +53,13 @@ export function createOpenApi({ info, operations: paths }: {
             [path, operations],
           ) => [
             path,
-            Object.fromEntries<PathItemObject>(
+            Object.fromEntries<OperationObject>(
               operations.map(
                 (
                   operation,
-                ): [string, PathItemObject] => [
+                ): [string, OperationObject] => [
                   operation.method.toLowerCase(),
-                  {
-                    parameters: [
-                      ...Object.entries(operation.queryParameters).map(
-                        ([name, queryParameter]): ParameterObject => ({
-                          name,
-                          in: "query",
-                          description: queryParameter.description,
-                          deprecated: queryParameter.deprecated,
-                        }),
-                      ),
-                    ],
-                  },
+                  operationToObject(operation),
                 ],
               ),
             ),
@@ -77,3 +69,47 @@ export function createOpenApi({ info, operations: paths }: {
     },
   };
 }
+
+const operationToObject = (operation: OperationInternal): OperationObject => {
+  const requestBody: RequestBodyObject | undefined = operation.requestBody
+    ? {
+      description: operation.requestBody.description,
+      content: Object.fromEntries<MediaTypeObject>(
+        operation.requestBody.content.map(
+          (body): [string, MediaTypeObject] => [
+            body.mimeType,
+            body.jsonSchema,
+          ],
+        ),
+      ),
+    }
+    : undefined;
+
+  return {
+    ...(operation.description ? { description: operation.description } : {}),
+    parameters: [
+      ...Object.entries(operation.queryParameters).map(
+        ([name, queryParameter]): ParameterObject => ({
+          name,
+          in: "query",
+          description: queryParameter.description,
+          deprecated: queryParameter.deprecated,
+        }),
+      ),
+    ],
+
+    ...(requestBody ? { requestBody } : {}),
+    responses: Object.fromEntries(operation.responses.map(
+      (response): [string, ResponseObject] => [response.statusCode, {
+        description: response.description,
+        content: Object.fromEntries<MediaTypeObject>(
+          response.content.map(
+            (
+              body,
+            ): [string, MediaTypeObject] => [body.mimeType, body.jsonSchema],
+          ),
+        ),
+      }],
+    )),
+  };
+};

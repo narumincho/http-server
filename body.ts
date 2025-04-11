@@ -1,3 +1,4 @@
+import { ExampleObject, MediaTypeObject } from "npm:openapi-typescript";
 import { JsonDefinition } from "./json.ts";
 
 const bodySymbol = Symbol();
@@ -9,70 +10,96 @@ export type BodyDefinition<
   readonly mimeType: MimeType;
   readonly decode: (request: Request) => Promise<Type>;
   readonly encode: (request: Type) => Promise<BodyInit>;
+  readonly jsonSchema: MediaTypeObject;
   readonly [bodySymbol]: typeof bodySymbol;
+};
+
+type Examples = {
+  readonly [name: string]: ExampleObject;
 };
 
 /**
  * `text/plain`
  */
-export function textPlain(): BodyDefinition<
+export const textPlain = (
+  { examples = { sampleText: { value: "サンプルテキスト" } } }: {
+    readonly examples: Examples;
+  },
+): BodyDefinition<
   "text/plain",
   string
-> {
-  return text("text/plain");
-}
+> => text({ mimeType: "text/plain", examples });
 
-export function text<const MimeType extends string = never>(
-  mimeType: MimeType,
+/**
+ * `text/html`
+ */
+export const textHtml = (
+  {
+    examples = {
+      sampleText: {
+        value: "<!doctype html><html><head></head><body></body></html>",
+      },
+    },
+  }: {
+    readonly examples?: Examples;
+  },
+): BodyDefinition<
+  "text/html",
+  string
+> => text({ mimeType: "text/html", examples });
+
+export const text = <const MimeType extends string = never>(
+  { mimeType, examples }: {
+    readonly mimeType: MimeType;
+    readonly examples: Examples;
+  },
 ): BodyDefinition<
   MimeType,
   string
-> {
-  return {
-    mimeType,
-    decode: async (request) => await request.text(),
-    encode: async (text) => text,
-    [bodySymbol]: bodySymbol,
-  };
-}
+> => ({
+  mimeType,
+  decode: async (request) => await request.text(),
+  // deno-lint-ignore require-await
+  encode: async (text) => text,
+  jsonSchema: { examples, schema: { type: "string" } },
+  [bodySymbol]: bodySymbol,
+});
 
 /**
  * `application/octet-stream`
  */
-export function applicationOctetStream(): BodyDefinition<
+export const applicationOctetStream = (): BodyDefinition<
   "application/octet-stream",
   Uint8Array
-> {
-  return binary("application/octet-stream");
-}
+> => binary({ mimeType: "application/octet-stream" });
 
-export function binary<
+export const binary = <
   const MimeType extends string = never,
->(mimeType: MimeType): BodyDefinition<
+>({ mimeType }: { mimeType: MimeType }): BodyDefinition<
   MimeType,
   Uint8Array
-> {
-  return {
-    mimeType,
-    decode: async (request) => await request.bytes(),
-    encode: async (binary) => binary,
-    [bodySymbol]: bodySymbol,
-  };
-}
+> => ({
+  mimeType,
+  decode: async (request) => await request.bytes(),
+  // deno-lint-ignore require-await
+  encode: async (binary) => binary,
+  jsonSchema: {},
+  [bodySymbol]: bodySymbol,
+});
 
 /**
  * `application/json`
  */
-export function applicationJson<T>(
+export const applicationJson = <T>(
   jsonDefinition: JsonDefinition<T>,
 ): BodyDefinition<
   "application/json",
   T
-> {
-  return {
-    mimeType: "application/json",
-    decode: async (request) => jsonDefinition.decode(await request.json()),
-    encode: async (json) => JSON.stringify(json),
-    [bodySymbol]: bodySymbol,
-  };
-}
+> => ({
+  mimeType: "application/json",
+  decode: async (request) => jsonDefinition.decode(await request.json()),
+  // deno-lint-ignore require-await
+  encode: async (json) => JSON.stringify(json),
+  jsonSchema: jsonDefinition.jsonSchema,
+  [bodySymbol]: bodySymbol,
+});

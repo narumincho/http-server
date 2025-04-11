@@ -13,6 +13,7 @@ import { createRedocOperation } from "./redoc.ts";
 const operations: Parameters<typeof createHandler>["0"]["operations"] = [
   operation.get({
     path: "/items",
+    description: "アイテムを一覧で取得します",
     queryParameters: {
       filter: optional({
         description: "フィルターのパラメーター",
@@ -41,6 +42,7 @@ const operations: Parameters<typeof createHandler>["0"]["operations"] = [
         ],
       }),
     ],
+    // deno-lint-ignore require-await
     handler: async ({ pathParameters, queryParameters }) => {
       console.log(pathParameters, queryParameters);
       return responseHelper.ok("application/json", [{ name: "" }]);
@@ -57,6 +59,7 @@ const operations: Parameters<typeof createHandler>["0"]["operations"] = [
         })),
       ],
     })],
+    // deno-lint-ignore require-await
     handler: async ({ pathParameters, queryParameters }) => {
       console.log(pathParameters, queryParameters);
       return responseHelper.ok("application/json", { wip: "123" });
@@ -79,6 +82,7 @@ const operations: Parameters<typeof createHandler>["0"]["operations"] = [
         })),
       ],
     })],
+    // deno-lint-ignore require-await
     handler: async ({ pathParameters, queryParameters }) => {
       console.log(pathParameters, queryParameters);
       return responseHelper.ok("application/json", { wip: "123" });
@@ -94,6 +98,7 @@ const operations: Parameters<typeof createHandler>["0"]["operations"] = [
         })),
       ],
     })],
+    // deno-lint-ignore require-await
     handler: async ({ pathParameters, queryParameters }) => {
       console.log(pathParameters, queryParameters);
       return responseHelper.ok("application/json", { wip: "123" });
@@ -109,6 +114,7 @@ const operations: Parameters<typeof createHandler>["0"]["operations"] = [
         })),
       ],
     })],
+    // deno-lint-ignore require-await
     handler: async ({ pathParameters, queryParameters }) => {
       console.log(pathParameters, queryParameters);
       return responseHelper.ok(
@@ -119,6 +125,7 @@ const operations: Parameters<typeof createHandler>["0"]["operations"] = [
   }),
   createOpenApiOperation({
     path: "/openapi",
+    // deno-lint-ignore require-await
     handler: async () =>
       createOpenApi({
         info: {

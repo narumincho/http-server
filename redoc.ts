@@ -11,8 +11,9 @@ export const createRedocOperation = (
     path,
     responses: [response.ok({
       description: "Redoc documentation",
-      content: [body.text("text/html")],
+      content: [body.textHtml({})],
     })],
+    // deno-lint-ignore require-await
     handler: async () => {
       return {
         statusCode: "200",

@@ -52,6 +52,7 @@ type OperationInput<
    * }
    * ```
    */
+  readonly description?: string | undefined;
   readonly queryParameters?: QueryParameters | undefined;
   readonly requestBody?: {
     readonly description: string;
@@ -86,6 +87,7 @@ export type ResponseTransform<
 export type OperationInternal = {
   readonly path: string;
   readonly method: HttpMethod;
+  readonly description: string | undefined;
   readonly queryParameters: Record<
     string,
     QueryDefinition<unknown>
@@ -134,17 +136,25 @@ export function createOperation<
     >
   > = never,
 >(
-  { path, method, queryParameters, requestBody, responses, handler }:
-    OperationInput<
-      Path,
-      QueryParameters,
-      RequestBodyContent,
-      Responses
-    >,
+  {
+    path,
+    method,
+    description,
+    queryParameters,
+    requestBody,
+    responses,
+    handler,
+  }: OperationInput<
+    Path,
+    QueryParameters,
+    RequestBodyContent,
+    Responses
+  >,
 ): OperationInternal {
   return {
     path,
     method,
+    description,
     queryParameters: Object.fromEntries(
       Object.entries(queryParameters ?? {}).map(
         ([name, queryParameter]) => [
@@ -187,7 +197,7 @@ export function get<
     >
   > = never,
 >(
-  { path, queryParameters, responses, handler }: Omit<
+  { path, description, queryParameters, responses, handler }: Omit<
     OperationInput<
       Path,
       QueryParameters,
@@ -200,6 +210,7 @@ export function get<
   return createOperation<Path, QueryParameters, never, Responses>({
     path,
     method: "GET",
+    description,
     queryParameters,
     responses,
     handler,
@@ -220,7 +231,7 @@ export function post<
     >
   > = never,
 >(
-  { path, queryParameters, requestBody, responses, handler }: Omit<
+  { path, description, queryParameters, requestBody, responses, handler }: Omit<
     OperationInput<
       Path,
       QueryParameters,
@@ -233,6 +244,7 @@ export function post<
   return createOperation<Path, QueryParameters, RequestBodyContent, Responses>({
     path,
     method: "POST",
+    description,
     queryParameters,
     requestBody,
     responses,
@@ -254,7 +266,7 @@ function delete_<
     >
   > = never,
 >(
-  { path, queryParameters, responses, handler }: Omit<
+  { path, description, queryParameters, responses, handler }: Omit<
     OperationInput<
       Path,
       QueryParameters,
@@ -267,6 +279,7 @@ function delete_<
   return createOperation<Path, QueryParameters, RequestBodyContent, Responses>({
     path,
     method: "DELETE",
+    description,
     queryParameters,
     responses,
     handler,
@@ -289,7 +302,7 @@ export function patch<
     >
   > = never,
 >(
-  { path, queryParameters, requestBody, responses, handler }: Omit<
+  { path, description, queryParameters, requestBody, responses, handler }: Omit<
     OperationInput<
       Path,
       QueryParameters,
@@ -302,6 +315,7 @@ export function patch<
   return createOperation<Path, QueryParameters, RequestBodyContent, Responses>({
     path,
     method: "PATCH",
+    description,
     queryParameters,
     requestBody,
     responses,
