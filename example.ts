@@ -9,6 +9,7 @@ import {
 import { boolean, optional, required, string } from "./query.ts";
 import { createOpenApi, createOpenApiOperation } from "./openApi.ts";
 import { createRedocOperation } from "./redoc.ts";
+import { createScalarOperation } from "./scalar.ts";
 
 const operations: Parameters<typeof createHandler>["0"]["operations"] = [
   operation.get({
@@ -135,7 +136,8 @@ const operations: Parameters<typeof createHandler>["0"]["operations"] = [
         operations,
       }),
   }),
-  createRedocOperation({ path: "/doc", openApiPath: "/openapi" }),
+  createRedocOperation({ path: "/redoc", openApiPath: "/openapi" }),
+  createScalarOperation({ path: "/scalar", openApiPath: "/openapi" }),
 ];
 
 Deno.serve(

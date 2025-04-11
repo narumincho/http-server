@@ -2,9 +2,9 @@ import { body, operation, response } from "./mod.ts";
 import { OperationInternal } from "./operation.ts";
 
 /**
- * https://github.com/Redocly/redoc
+ * https://github.com/scalar/scalar
  */
-export const createRedocOperation = (
+export const createScalarOperation = (
   { path, openApiPath }: {
     readonly path: string;
     readonly openApiPath: string;
@@ -24,11 +24,24 @@ export const createRedocOperation = (
           mimeType: "text/html",
           content: `<!doctype html>
 <html>
-<head></head>
-<body>
-  <redoc spec-url="${openApiPath}"></redoc>
-  <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
-</body>
+  <head>
+    <title>Scalar API Reference</title>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1" />
+  </head>
+
+  <body>
+    <div id="app"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+
+    <script>
+      Scalar.createApiReference('#app', {
+        url: '${openApiPath}',
+      })
+    </script>
+  </body>
 </html>`,
         },
       } as const;
