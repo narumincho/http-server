@@ -6,6 +6,7 @@ import {
   ParameterObject,
   RequestBodyObject,
   ResponseObject,
+  SchemaObject,
 } from "npm:openapi-typescript";
 import { OperationInternal } from "./operation.ts";
 import { body, json, operation, response } from "./mod.ts";
@@ -96,6 +97,18 @@ const operationToObject = (operation: OperationInternal): OperationObject => {
           deprecated: queryParameter.deprecated,
         }),
       ),
+      ...operation.requestHeaders.map((requestHeader): ParameterObject => ({
+        in: "header",
+        name: requestHeader.name,
+        description: requestHeader.description,
+        deprecated: requestHeader.deprecated,
+        required: requestHeader.required,
+        examples: requestHeader.examples,
+        schema: {
+          type: "string",
+          pattern: requestHeader.regexp.source,
+        } as SchemaObject,
+      })),
     ],
 
     ...(requestBody ? { requestBody } : {}),

@@ -1,6 +1,7 @@
 import { QueryDefinition } from "./query.ts";
 import { BodyDefinition } from "./body.ts";
 import { ResponseObjectDefinition } from "./response.ts";
+import { RequestHeaderDefinition } from "./requestHeader.ts";
 
 const supportedHttpMethod = [
   "GET",
@@ -31,6 +32,9 @@ type ExtractParams<Path extends string> = Path extends
 type OperationInput<
   Path extends string,
   QueryParameters extends Record<string, QueryDefinition<unknown>>,
+  RequestHeaders extends ReadonlyArray<
+    RequestHeaderDefinition<boolean, unknown>
+  >,
   RequestBodyContent extends ReadonlyArray<
     BodyDefinition<string, any>
   >,
@@ -54,6 +58,11 @@ type OperationInput<
    */
   readonly description?: string | undefined;
   readonly queryParameters?: QueryParameters | undefined;
+  readonly requestHeaders?:
+    | ReadonlyArray<
+      RequestHeaderDefinition<boolean, unknown>
+    >
+    | undefined;
   readonly requestBody?: {
     readonly description: string;
     readonly content: RequestBodyContent;
@@ -96,6 +105,9 @@ export type OperationInternal = {
     readonly description: string;
     readonly content: ReadonlyArray<BodyDefinition<string, any>>;
   } | undefined;
+  readonly requestHeaders: ReadonlyArray<
+    RequestHeaderDefinition<boolean, unknown>
+  >;
   readonly responses: ReadonlyArray<
     ResponseObjectDefinition<
       string,
@@ -126,6 +138,9 @@ export function createOperation<
   const Path extends string,
   const QueryParameters extends Record<string, QueryDefinition<unknown>> =
     never,
+  const RequestHeaders extends ReadonlyArray<
+    RequestHeaderDefinition<boolean, unknown>
+  > = never,
   const RequestBodyContent extends ReadonlyArray<
     BodyDefinition<string, any>
   > = never,
@@ -141,12 +156,14 @@ export function createOperation<
     method,
     description,
     queryParameters,
+    requestHeaders,
     requestBody,
     responses,
     handler,
   }: OperationInput<
     Path,
     QueryParameters,
+    RequestHeaders,
     RequestBodyContent,
     Responses
   >,
@@ -163,6 +180,7 @@ export function createOperation<
         ],
       ),
     ),
+    requestHeaders: requestHeaders ?? [],
     requestBody: requestBody,
     responses,
     handler: handler as unknown as (
@@ -190,6 +208,9 @@ export function get<
   const Path extends string,
   const QueryParameters extends Record<string, QueryDefinition<unknown>> =
     never,
+  const RequestHeaders extends ReadonlyArray<
+    RequestHeaderDefinition<boolean, unknown>
+  > = never,
   const Responses extends ReadonlyArray<
     ResponseObjectDefinition<
       string,
@@ -197,21 +218,30 @@ export function get<
     >
   > = never,
 >(
-  { path, description, queryParameters, responses, handler }: Omit<
-    OperationInput<
-      Path,
-      QueryParameters,
-      never,
-      Responses
+  { path, description, requestHeaders, queryParameters, responses, handler }:
+    Omit<
+      OperationInput<
+        Path,
+        QueryParameters,
+        RequestHeaders,
+        never,
+        Responses
+      >,
+      "method" | "requestBody"
     >,
-    "method" | "requestBody"
-  >,
 ): OperationInternal {
-  return createOperation<Path, QueryParameters, never, Responses>({
+  return createOperation<
+    Path,
+    QueryParameters,
+    RequestHeaders,
+    never,
+    Responses
+  >({
     path,
     method: "GET",
     description,
     queryParameters,
+    requestHeaders,
     responses,
     handler,
   });
@@ -221,6 +251,9 @@ export function post<
   const Path extends string,
   const QueryParameters extends Record<string, QueryDefinition<unknown>> =
     never,
+  const RequestHeaders extends ReadonlyArray<
+    RequestHeaderDefinition<boolean, unknown>
+  > = never,
   const RequestBodyContent extends ReadonlyArray<
     BodyDefinition<string, any>
   > = never,
@@ -231,21 +264,37 @@ export function post<
     >
   > = never,
 >(
-  { path, description, queryParameters, requestBody, responses, handler }: Omit<
+  {
+    path,
+    description,
+    queryParameters,
+    requestHeaders,
+    requestBody,
+    responses,
+    handler,
+  }: Omit<
     OperationInput<
       Path,
       QueryParameters,
+      RequestHeaders,
       RequestBodyContent,
       Responses
     >,
     "method"
   >,
 ): OperationInternal {
-  return createOperation<Path, QueryParameters, RequestBodyContent, Responses>({
+  return createOperation<
+    Path,
+    QueryParameters,
+    RequestHeaders,
+    RequestBodyContent,
+    Responses
+  >({
     path,
     method: "POST",
     description,
     queryParameters,
+    requestHeaders,
     requestBody,
     responses,
     handler,
@@ -256,6 +305,9 @@ function delete_<
   const Path extends string,
   const QueryParameters extends Record<string, QueryDefinition<unknown>> =
     never,
+  const RequestHeaders extends ReadonlyArray<
+    RequestHeaderDefinition<boolean, unknown>
+  > = never,
   const RequestBodyContent extends ReadonlyArray<
     BodyDefinition<string, any>
   > = never,
@@ -266,21 +318,30 @@ function delete_<
     >
   > = never,
 >(
-  { path, description, queryParameters, responses, handler }: Omit<
-    OperationInput<
-      Path,
-      QueryParameters,
-      RequestBodyContent,
-      Responses
+  { path, description, queryParameters, requestHeaders, responses, handler }:
+    Omit<
+      OperationInput<
+        Path,
+        QueryParameters,
+        RequestHeaders,
+        RequestBodyContent,
+        Responses
+      >,
+      "method" | "requestBody"
     >,
-    "method" | "requestBody"
-  >,
 ): OperationInternal {
-  return createOperation<Path, QueryParameters, RequestBodyContent, Responses>({
+  return createOperation<
+    Path,
+    QueryParameters,
+    RequestHeaders,
+    RequestBodyContent,
+    Responses
+  >({
     path,
     method: "DELETE",
     description,
     queryParameters,
+    requestHeaders,
     responses,
     handler,
   });
@@ -292,6 +353,9 @@ export function patch<
   const Path extends string,
   const QueryParameters extends Record<string, QueryDefinition<unknown>> =
     never,
+  const RequestHeaders extends ReadonlyArray<
+    RequestHeaderDefinition<boolean, unknown>
+  > = never,
   const RequestBodyContent extends ReadonlyArray<
     BodyDefinition<string, any>
   > = never,
@@ -302,21 +366,37 @@ export function patch<
     >
   > = never,
 >(
-  { path, description, queryParameters, requestBody, responses, handler }: Omit<
+  {
+    path,
+    description,
+    queryParameters,
+    requestHeaders,
+    requestBody,
+    responses,
+    handler,
+  }: Omit<
     OperationInput<
       Path,
       QueryParameters,
+      RequestHeaders,
       RequestBodyContent,
       Responses
     >,
     "method"
   >,
 ): OperationInternal {
-  return createOperation<Path, QueryParameters, RequestBodyContent, Responses>({
+  return createOperation<
+    Path,
+    QueryParameters,
+    RequestHeaders,
+    RequestBodyContent,
+    Responses
+  >({
     path,
     method: "PATCH",
     description,
     queryParameters,
+    requestHeaders,
     requestBody,
     responses,
     handler,

@@ -3,6 +3,7 @@ import {
   createHandler,
   json,
   operation,
+  requestHeader,
   response,
   responseHelper,
 } from "./mod.ts";
@@ -32,6 +33,9 @@ const operations: Parameters<typeof createHandler>["0"]["operations"] = [
         example: "サンプル必須!",
       }),
     },
+    requestHeaders: [
+      requestHeader.authorizationBearer({ required: true, deprecated: false }),
+    ],
     responses: [
       response.ok({
         description: "取得結果を返します",
