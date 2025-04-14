@@ -1,4 +1,4 @@
-import { body, operation, response } from "./mod.ts";
+import { body, operation, response, responseHelper } from "./mod.ts";
 import { OperationInternal } from "./operation.ts";
 
 /**
@@ -18,11 +18,9 @@ export const createScalarOperation = (
     })],
     // deno-lint-ignore require-await
     handler: async () => {
-      return {
-        statusCode: "200",
-        content: {
-          mimeType: "text/html",
-          content: `<!doctype html>
+      return responseHelper.ok(
+        "text/html",
+        `<!doctype html>
 <html>
   <head>
     <title>Scalar API Reference</title>
@@ -43,7 +41,6 @@ export const createScalarOperation = (
     </script>
   </body>
 </html>`,
-        },
-      } as const;
+      );
     },
   });

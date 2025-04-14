@@ -1,4 +1,4 @@
-import { body, operation, response } from "./mod.ts";
+import { body, operation, response, responseHelper } from "./mod.ts";
 import { OperationInternal } from "./operation.ts";
 
 /**
@@ -18,11 +18,9 @@ export const createRedocOperation = (
     })],
     // deno-lint-ignore require-await
     handler: async () => {
-      return {
-        statusCode: "200",
-        content: {
-          mimeType: "text/html",
-          content: `<!doctype html>
+      return responseHelper.ok(
+        "text/html",
+        `<!doctype html>
 <html>
 <head></head>
 <body>
@@ -30,7 +28,6 @@ export const createRedocOperation = (
   <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
 </body>
 </html>`,
-        },
-      } as const;
+      );
     },
   });
