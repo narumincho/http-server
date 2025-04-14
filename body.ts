@@ -23,7 +23,7 @@ type Examples = {
  */
 export const textPlain = (
   { examples = { sampleText: { value: "サンプルテキスト" } } }: {
-    readonly examples: Examples;
+    readonly examples?: Examples;
   },
 ): BodyDefinition<
   "text/plain",

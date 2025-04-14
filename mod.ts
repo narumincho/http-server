@@ -124,6 +124,14 @@ const handleOperation = async (
         e.type === "value" ? [[e.name, e.value]] : []
       ),
     ),
+    headers: Object.fromEntries(
+      operation.requestHeaders.map((
+        header,
+      ) => [
+        header.name,
+        header.decode(request.headers.get(header.name) ?? undefined),
+      ]),
+    ),
     body: matchedRequestBodyDefinition
       ? {
         mimeType: matchedRequestBodyDefinition.mimeType,

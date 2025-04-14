@@ -17,7 +17,7 @@ Deno.test("body", async () => {
         requestBody: {
           description: "",
           content: [
-            body.textPlain(),
+            body.textPlain({}),
             body.applicationOctetStream(),
             body.applicationJson(json.object({
               a: json.string(),
@@ -110,7 +110,7 @@ Deno.test("body unexpected Content-Type", async () => {
         requestBody: {
           description: "",
           content: [
-            body.textPlain(),
+            body.textPlain({}),
           ],
         },
         responses: [

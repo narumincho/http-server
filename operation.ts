@@ -33,7 +33,7 @@ type OperationInput<
   Path extends string,
   QueryParameters extends Record<string, QueryDefinition<unknown>>,
   RequestHeaders extends ReadonlyArray<
-    RequestHeaderDefinition<boolean, unknown>
+    RequestHeaderDefinition<string, boolean, unknown>
   >,
   RequestBodyContent extends ReadonlyArray<
     BodyDefinition<string, any>
@@ -58,11 +58,7 @@ type OperationInput<
    */
   readonly description?: string | undefined;
   readonly queryParameters?: QueryParameters | undefined;
-  readonly requestHeaders?:
-    | ReadonlyArray<
-      RequestHeaderDefinition<boolean, unknown>
-    >
-    | undefined;
+  readonly requestHeaders: RequestHeaders;
   readonly requestBody?: {
     readonly description: string;
     readonly content: RequestBodyContent;
@@ -73,6 +69,11 @@ type OperationInput<
       readonly pathParameters: ExtractParams<Path>;
       readonly queryParameters: {
         [k in keyof QueryParameters]: QueryParameters[k]["example"];
+      };
+      readonly headers: {
+        readonly [
+          requestHeader in RequestHeaders[number] as requestHeader["name"]
+        ]: ReturnType<requestHeader["decode"]>;
       };
       readonly body: BodyTransform<RequestBodyContent[number]>;
     },
@@ -106,7 +107,7 @@ export type OperationInternal = {
     readonly content: ReadonlyArray<BodyDefinition<string, any>>;
   } | undefined;
   readonly requestHeaders: ReadonlyArray<
-    RequestHeaderDefinition<boolean, unknown>
+    RequestHeaderDefinition<string, boolean, unknown>
   >;
   readonly responses: ReadonlyArray<
     ResponseObjectDefinition<
@@ -118,6 +119,7 @@ export type OperationInternal = {
     request: {
       readonly pathParameters: ExtractParams<string>;
       readonly queryParameters: Record<string, unknown>;
+      readonly headers: Record<string, unknown>;
       readonly body:
         | { readonly mimeType: string; readonly content: unknown }
         | undefined;
@@ -139,7 +141,7 @@ export function createOperation<
   const QueryParameters extends Record<string, QueryDefinition<unknown>> =
     never,
   const RequestHeaders extends ReadonlyArray<
-    RequestHeaderDefinition<boolean, unknown>
+    RequestHeaderDefinition<string, boolean, unknown>
   > = never,
   const RequestBodyContent extends ReadonlyArray<
     BodyDefinition<string, any>
@@ -209,7 +211,7 @@ export function get<
   const QueryParameters extends Record<string, QueryDefinition<unknown>> =
     never,
   const RequestHeaders extends ReadonlyArray<
-    RequestHeaderDefinition<boolean, unknown>
+    RequestHeaderDefinition<string, boolean, unknown>
   > = never,
   const Responses extends ReadonlyArray<
     ResponseObjectDefinition<
@@ -252,7 +254,7 @@ export function post<
   const QueryParameters extends Record<string, QueryDefinition<unknown>> =
     never,
   const RequestHeaders extends ReadonlyArray<
-    RequestHeaderDefinition<boolean, unknown>
+    RequestHeaderDefinition<string, boolean, unknown>
   > = never,
   const RequestBodyContent extends ReadonlyArray<
     BodyDefinition<string, any>
@@ -306,7 +308,7 @@ function delete_<
   const QueryParameters extends Record<string, QueryDefinition<unknown>> =
     never,
   const RequestHeaders extends ReadonlyArray<
-    RequestHeaderDefinition<boolean, unknown>
+    RequestHeaderDefinition<string, boolean, unknown>
   > = never,
   const RequestBodyContent extends ReadonlyArray<
     BodyDefinition<string, any>
@@ -354,7 +356,7 @@ export function patch<
   const QueryParameters extends Record<string, QueryDefinition<unknown>> =
     never,
   const RequestHeaders extends ReadonlyArray<
-    RequestHeaderDefinition<boolean, unknown>
+    RequestHeaderDefinition<string, boolean, unknown>
   > = never,
   const RequestBodyContent extends ReadonlyArray<
     BodyDefinition<string, any>

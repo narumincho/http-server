@@ -1,10 +1,11 @@
 const requestHeaderSymbol = Symbol();
 
 export type RequestHeaderDefinition<
+  Name extends string,
   Required extends boolean,
   T extends unknown,
 > = {
-  readonly name: string;
+  readonly name: Name;
   readonly description: string;
   readonly required: Required;
   readonly deprecated: boolean;
@@ -26,6 +27,7 @@ export const authorizationBearer = <
    */
   readonly deprecated?: boolean | undefined;
 }): RequestHeaderDefinition<
+  "Authorization",
   Required,
   Required extends true ? string : string | undefined
 > => ({
