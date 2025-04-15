@@ -1,3 +1,5 @@
+import { spy } from "jsr:@std/testing/mock";
+
 import { assertEquals } from "jsr:@std/assert";
 import {
   body,
@@ -10,7 +12,7 @@ import {
 } from "../mod.ts";
 import { Equal, Expect } from "npm:@type-challenges/utils";
 
-Deno.test("header", async () => {
+Deno.test("requestHeader", async () => {
   const handler = createHandler({
     operations: [
       operation.get({
@@ -66,7 +68,7 @@ Deno.test("header", async () => {
   );
 });
 
-Deno.test("header required", async () => {
+Deno.test("requestHeader required", async () => {
   const handler = createHandler({
     operations: [
       operation.get({

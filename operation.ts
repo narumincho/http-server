@@ -58,27 +58,50 @@ type OperationInput<
    */
   readonly description?: string | undefined;
   readonly queryParameters?: QueryParameters | undefined;
-  readonly requestHeaders: RequestHeaders;
+  readonly requestHeaders?: RequestHeaders | undefined;
   readonly requestBody?: {
     readonly description: string;
     readonly content: RequestBodyContent;
   } | undefined;
   readonly responses: Responses;
-  readonly handler: (
-    request: {
-      readonly pathParameters: ExtractParams<Path>;
-      readonly queryParameters: {
-        [k in keyof QueryParameters]: QueryParameters[k]["example"];
-      };
-      readonly headers: {
-        readonly [
-          requestHeader in RequestHeaders[number] as requestHeader["name"]
-        ]: ReturnType<requestHeader["decode"]>;
-      };
-      readonly body: BodyTransform<RequestBodyContent[number]>;
-    },
-  ) => Promise<ResponseTransform<Responses[number]>>;
+  readonly handler: CreateHandlerType<
+    NoInfer<Path>,
+    NoInfer<QueryParameters>,
+    NoInfer<RequestHeaders>,
+    NoInfer<RequestBodyContent>,
+    NoInfer<Responses>
+  >;
 };
+
+export type CreateHandlerType<
+  Path extends string,
+  QueryParameters extends Record<string, QueryDefinition<unknown>>,
+  RequestHeaders extends ReadonlyArray<
+    RequestHeaderDefinition<string, boolean, unknown>
+  >,
+  RequestBodyContent extends ReadonlyArray<
+    BodyDefinition<string, any>
+  >,
+  Responses extends ReadonlyArray<
+    ResponseObjectDefinition<
+      string,
+      ReadonlyArray<BodyDefinition<string, any>>
+    >
+  >,
+> = (
+  request: {
+    readonly pathParameters: ExtractParams<Path>;
+    readonly queryParameters: {
+      [k in keyof QueryParameters]: QueryParameters[k]["example"];
+    };
+    readonly headers: {
+      readonly [
+        requestHeader in RequestHeaders[number] as requestHeader["name"]
+      ]: ReturnType<requestHeader["decode"]>;
+    };
+    readonly body: BodyTransform<RequestBodyContent[number]>;
+  },
+) => Promise<ResponseTransform<Responses[number]>>;
 
 type BodyTransform<T extends BodyDefinition<string, any>> = T extends
   BodyDefinition<infer M, infer C>

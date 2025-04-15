@@ -33,6 +33,7 @@ Deno.test("query parameter", async () => {
             example: "こんなクエリ名を指定することはまずないけど",
           }),
         },
+        requestHeaders: [],
         responses: [response.ok({
           description: "",
           content: [body.applicationJson(json.object({}))],
