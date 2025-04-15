@@ -44,6 +44,17 @@ export const createHandler = (
   };
 };
 
+type ValueOrError = {
+  readonly type: "value";
+  readonly name: string;
+  readonly value: unknown;
+} | {
+  readonly type: "error";
+  readonly name: string;
+  readonly in: "query" | "header";
+  readonly message: string;
+};
+
 const handleOperation = async (
   { operation, request, result }: {
     operation: OperationInternal;
@@ -54,10 +65,7 @@ const handleOperation = async (
   const searchParams = new URL(request.url).searchParams;
   const queryParameters = Object.entries(operation.queryParameters ?? {}).map((
     [name, queryParameter],
-  ): { type: "value"; name: string; value: unknown } | {
-    type: "error";
-    message: string;
-  } => {
+  ): ValueOrError => {
     try {
       return {
         type: "value",
@@ -65,13 +73,44 @@ const handleOperation = async (
         value: queryParameter.decode(searchParams.getAll(name)),
       };
     } catch (e) {
-      return { type: "error", message: `${e} in query ${name}` };
+      return {
+        type: "error",
+        name,
+        in: "query",
+        message: `${e} in query ${name}`,
+      };
     }
   });
-  const errors = queryParameters.filter((e) => e.type === "error");
+  const headers = operation.requestHeaders.map((
+    header,
+  ): ValueOrError => {
+    try {
+      return {
+        type: "value",
+        name,
+        value: header.decode(request.headers.get(header.name) ?? undefined),
+      };
+    } catch (e) {
+      return {
+        type: "error",
+        name: header.name,
+        in: "header",
+        message: `${e}`,
+      };
+    }
+  });
+  const errors = [...headers, ...queryParameters].filter((e) =>
+    e.type === "error"
+  );
   if (errors.length > 0) {
     return new Response(
-      JSON.stringify({ errors: errors.map((e) => ({ message: e.message })) }),
+      JSON.stringify({
+        errors: errors.map((e) => ({
+          name: e.name,
+          in: e.in,
+          message: e.message,
+        })),
+      }),
       {
         headers: {
           "content-type": "application/json",

@@ -1,4 +1,4 @@
-import { spy } from "jsr:@std/testing/mock";
+import { assertSpyCall, spy } from "jsr:@std/testing/mock";
 
 import { assertEquals } from "jsr:@std/assert";
 import {
@@ -13,6 +13,7 @@ import {
 import { Equal, Expect } from "npm:@type-challenges/utils";
 
 Deno.test("requestHeader", async () => {
+  const func = spy((_headers: unknown): void => {});
   const handler = createHandler({
     operations: [
       operation.get({
@@ -36,6 +37,7 @@ Deno.test("requestHeader", async () => {
               >
             >,
           ];
+          func(headers);
           return responseHelper.ok("application/json", headers);
         },
       }),
@@ -55,17 +57,13 @@ Deno.test("requestHeader", async () => {
     },
   );
 
-  assertEquals(
-    await (await handler(
-      new Request("https://example.com/samplePath", {
-        headers: {},
-      }),
-    )).json(),
-    {
-      // TODO json にしてしまったため undefined が渡せていない
-      Authorization: undefined,
-    },
+  await handler(
+    new Request("https://example.com/samplePath", {
+      headers: {},
+    }),
   );
+
+  assertSpyCall(func, 1, { args: [{ Authorization: undefined }] });
 });
 
 Deno.test("requestHeader required", async () => {
@@ -97,12 +95,33 @@ Deno.test("requestHeader required", async () => {
       }),
     ],
   });
+
+  const errorResponse = await handler(
+    new Request("https://example.com/samplePath", {
+      headers: {},
+    }),
+  );
+  assertEquals(errorResponse.status, 400);
+  assertEquals(await errorResponse.json(), {
+    errors: [
+      {
+        in: "header",
+        message: "Error: value is undefined",
+        name: "Authorization",
+      },
+    ],
+  });
+
   assertEquals(
-    (await handler(
+    await (await handler(
       new Request("https://example.com/samplePath", {
-        headers: {},
+        headers: {
+          Authorization: "Bearer sampleToken",
+        },
       }),
-    )).status,
-    500,
+    )).json(),
+    {
+      Authorization: "Bearer sampleToken",
+    },
   );
 });
