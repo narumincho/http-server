@@ -1,0 +1,18 @@
+name: type check and test
+
+on: pull_request
+
+jobs:
+  type-check-and-test:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+      - name: setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v1.39.1
+        # https://github.com/denoland/deno/pull/28655 この変更が取り込まれたら . を消す
+      - run: deno check .
+      - run: deno lint
+      - run: deno test
