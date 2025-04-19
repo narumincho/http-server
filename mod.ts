@@ -159,17 +159,20 @@ const handleOperation = async (
   const responseValue = await operation.handler({
     pathParameters: result.pathname.groups as Record<string, never>,
     queryParameters: Object.fromEntries(
-      queryParameters.flatMap((e) =>
-        e.type === "value" ? [[e.name, e.value]] : []
-      ),
+      queryParameters.map((e) => {
+        if (e.type === "error") {
+          throw new Error("expected error response");
+        }
+        return [[e.name, e.value]];
+      }),
     ),
     headers: Object.fromEntries(
-      operation.requestHeaders.map((
-        header,
-      ) => [
-        header.name,
-        header.decode(request.headers.get(header.name) ?? undefined),
-      ]),
+      headers.map((e) => {
+        if (e.type === "error") {
+          throw new Error("expected error response");
+        }
+        return [[e.name, e.value]];
+      }),
     ),
     body: matchedRequestBodyDefinition
       ? {

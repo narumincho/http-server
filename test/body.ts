@@ -27,7 +27,7 @@ Deno.test("body", async () => {
         responses: [
           response.ok({
             description: "",
-            content: [body.applicationJson(json.object({}))],
+            content: [body.applicationJson(json.object({ a: json.string() }))],
           }),
         ],
         // deno-lint-ignore require-await
@@ -49,7 +49,9 @@ Deno.test("body", async () => {
               >
             >,
           ];
-          return responseHelper.ok("application/json", {});
+          return responseHelper.ok("application/json", {
+            a: body.content.toString(),
+          });
         },
       }),
     ],
@@ -65,7 +67,7 @@ Deno.test("body", async () => {
         },
       }),
     )).json(),
-    "sampleText",
+    { a: "sampleText" },
   );
 });
 
@@ -90,15 +92,15 @@ Deno.test("body empty", async () => {
               >
             >,
           ];
-          return responseHelper.ok("application/json", {});
+          return responseHelper.ok("application/json", body);
         },
       }),
     ],
   });
 
   assertEquals(
-    await (await handler(new Request("https://example.com/samplePath"))).json(),
-    null,
+    await (await handler(new Request("https://example.com/samplePath"))).text(),
+    "",
   );
 });
 

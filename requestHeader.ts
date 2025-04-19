@@ -1,47 +1,96 @@
-const requestHeaderSymbol = Symbol();
+const requestHeaderDefinitionSymbol = Symbol();
 
 export type RequestHeaderDefinition<
   Name extends string,
-  Required extends boolean,
+  T extends unknown,
+> = {
+  readonly name: Name;
+  readonly required: boolean;
+  readonly deprecated: boolean;
+  readonly item: RequestHeaderItemDefinition<Name, T>;
+  readonly decode: (value: string) => T;
+  readonly [requestHeaderDefinitionSymbol]:
+    typeof requestHeaderDefinitionSymbol;
+};
+
+export function required<const Name extends string, const T>(
+  itemDefinition: RequestHeaderItemDefinition<Name, T>,
+  { deprecated = false }: { readonly deprecated?: boolean },
+): RequestHeaderDefinition<Name, T> {
+  return {
+    name: itemDefinition.name,
+    required: true,
+    deprecated,
+    item: itemDefinition,
+    decode: (value) => {
+      if (value === undefined) {
+        throw new Error(
+          `must be specified (header name: ${itemDefinition.name})`,
+        );
+      }
+      return itemDefinition.decode(value);
+    },
+    [requestHeaderDefinitionSymbol]: requestHeaderDefinitionSymbol,
+  };
+}
+
+export function optional<const Name extends string, const T>(
+  itemDefinition: RequestHeaderItemDefinition<
+    Name,
+    T
+  >,
+  { deprecated = false }: { readonly deprecated?: boolean },
+): RequestHeaderDefinition<
+  Name,
+  T | undefined
+> {
+  return {
+    name: itemDefinition.name,
+    required: false,
+    deprecated,
+    item: itemDefinition,
+    decode: (value) => {
+      if (value === undefined) {
+        return undefined;
+      }
+      return itemDefinition.decode(value);
+    },
+    [requestHeaderDefinitionSymbol]: requestHeaderDefinitionSymbol,
+  };
+}
+
+const requestHeaderItemDefinitionSymbol = Symbol();
+
+// カンマ区切りのヘッダーのサポートをする? どれくらいのヘッダーがサポートしているのか. また Authorization は複数指定してはいけないらしい
+
+export type RequestHeaderItemDefinition<
+  Name extends string,
   T extends unknown,
 > = {
   readonly name: Name;
   readonly description: string;
-  readonly required: Required;
-  readonly deprecated: boolean;
   readonly regexp: RegExp;
-  readonly examples: {};
-  readonly decode: (value: string | undefined) => T;
-  readonly [requestHeaderSymbol]: typeof requestHeaderSymbol;
+  // レスポンスヘッダー set-cookie だけ複数になる
+  readonly decode: (value: string) => T;
+  readonly [requestHeaderItemDefinitionSymbol]:
+    typeof requestHeaderItemDefinitionSymbol;
 };
 
 /**
  * http://developer.mozilla.org/docs/Web/HTTP/Reference/Headers/Authorization
  */
-export const authorizationBearer = <
-  const Required extends boolean,
->({ required, deprecated = false }: {
-  readonly required: Required;
-  /**
-   * @default false
-   */
-  readonly deprecated?: boolean | undefined;
-}): RequestHeaderDefinition<
-  "Authorization",
-  Required,
-  Required extends true ? string : string | undefined
-> => ({
+export const authorizationBearer = (
+  {}: {},
+): RequestHeaderItemDefinition<"Authorization", string> => ({
   name: "Authorization",
   description: "",
-  required,
-  deprecated,
   regexp: /^Bearer .+$/,
-  examples: {},
   decode: (value) => {
-    if (required && value === undefined) {
-      throw new Error("value is undefined");
+    const matchResult = value.match(/Bearer (.*)/)?.[0];
+    if (matchResult === undefined) {
+      throw new Error("invalid Authorization Bearer value");
     }
-    return value as Required extends true ? string : string | undefined;
+    return matchResult;
   },
-  [requestHeaderSymbol]: requestHeaderSymbol,
+  [requestHeaderItemDefinitionSymbol]: requestHeaderItemDefinitionSymbol,
 });

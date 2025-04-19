@@ -19,7 +19,10 @@ Deno.test("requestHeader", async () => {
       operation.get({
         path: "/samplePath",
         requestHeaders: [
-          requestHeader.authorizationBearer({ required: false }),
+          requestHeader.optional(
+            requestHeader.authorizationBearer({}),
+            {},
+          ),
         ],
         responses: [response.ok({
           description: "",
@@ -72,7 +75,7 @@ Deno.test("requestHeader required", async () => {
       operation.get({
         path: "/samplePath",
         requestHeaders: [
-          requestHeader.authorizationBearer({ required: true }),
+          requestHeader.required(requestHeader.authorizationBearer({}), {}),
         ],
         responses: [response.ok({
           description: "",

@@ -3,11 +3,11 @@ import {
   createHandler,
   json,
   operation,
+  query,
   requestHeader,
   response,
   responseHelper,
 } from "./mod.ts";
-import { boolean, optional, required, string } from "./query.ts";
 import { createOpenApi, createOpenApiOperation } from "./openApi.ts";
 import { createRedocOperation } from "./redoc.ts";
 import { createScalarOperation } from "./scalar.ts";
@@ -17,19 +17,19 @@ const operations: Parameters<typeof createHandler>["0"]["operations"] = [
     path: "/items",
     description: "アイテムを一覧で取得します",
     queryParameters: {
-      filter: optional({
+      filter: query.optional({
         description: "フィルターのパラメーター",
-        queryItemType: string(),
+        queryItemType: query.string(),
         example: "a",
       }),
-      withDetail: optional({
+      withDetail: query.optional({
         description: "",
-        queryItemType: boolean(),
+        queryItemType: query.boolean(),
         example: false,
       }),
-      sampleRequired: required({
+      sampleRequired: query.required({
         description: "必須パラメーター テスト",
-        queryItemType: string(),
+        queryItemType: query.string(),
         example: "サンプル必須!",
       }),
     },
@@ -73,9 +73,9 @@ const operations: Parameters<typeof createHandler>["0"]["operations"] = [
   operation.get({
     path: "/items/:id",
     queryParameters: {
-      withDetail: optional({
+      withDetail: query.optional({
         description: "詳細情報も取得するかどうか",
-        queryItemType: boolean(),
+        queryItemType: query.boolean(),
         example: false,
       }),
     },
