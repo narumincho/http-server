@@ -12,7 +12,7 @@ import {
 } from "../mod.ts";
 import { Equal, Expect } from "npm:@type-challenges/utils";
 
-Deno.test("requestHeader", async () => {
+Deno.test("requestHeader optional", async () => {
   const func = spy((_headers: unknown): void => {});
   const handler = createHandler({
     operations: [
@@ -26,7 +26,7 @@ Deno.test("requestHeader", async () => {
         ],
         responses: [response.ok({
           description: "",
-          content: [body.applicationJson(json.object({}))],
+          content: [body.textPlain({})],
         })],
         // deno-lint-ignore require-await
         handler: async ({ headers }) => {
@@ -41,23 +41,18 @@ Deno.test("requestHeader", async () => {
             >,
           ];
           func(headers);
-          return responseHelper.ok("application/json", headers);
+          return responseHelper.ok("text/plain", "");
         },
       }),
     ],
   });
 
-  assertEquals(
-    await (await handler(
-      new Request("https://example.com/samplePath", {
-        headers: {
-          Authorization: "Bearer sampleToken",
-        },
-      }),
-    )).json(),
-    {
-      Authorization: "Bearer sampleToken",
-    },
+  await handler(
+    new Request("https://example.com/samplePath", {
+      headers: {
+        Authorization: "Bearer sampleToken",
+      },
+    }),
   );
 
   await handler(
@@ -66,7 +61,24 @@ Deno.test("requestHeader", async () => {
     }),
   );
 
+  assertSpyCall(func, 0, { args: [{ Authorization: "sampleToken" }] });
   assertSpyCall(func, 1, { args: [{ Authorization: undefined }] });
+
+  const errorResponse = await handler(
+    new Request("https://example.com/samplePath", {
+      headers: { Authorization: "invalidText" },
+    }),
+  );
+  assertEquals(errorResponse.status, 400);
+  assertEquals(await errorResponse.json(), {
+    errors: [
+      {
+        in: "header",
+        message: "Error: invalid Authorization Bearer value",
+        name: "Authorization",
+      },
+    ],
+  });
 });
 
 Deno.test("requestHeader required", async () => {
@@ -109,7 +121,7 @@ Deno.test("requestHeader required", async () => {
     errors: [
       {
         in: "header",
-        message: "Error: value is undefined",
+        message: "Error: must be specified",
         name: "Authorization",
       },
     ],
@@ -124,7 +136,7 @@ Deno.test("requestHeader required", async () => {
       }),
     )).json(),
     {
-      Authorization: "Bearer sampleToken",
+      Authorization: "sampleToken",
     },
   );
 });

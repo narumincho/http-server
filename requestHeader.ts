@@ -29,9 +29,7 @@ export function required<const Name extends string, const T>(
     item: itemDefinition,
     decode: (value) => {
       if (value === undefined) {
-        throw new Error(
-          `must be specified (header name: ${itemDefinition.name})`,
-        );
+        throw new Error(`must be specified`);
       }
       return itemDefinition.decode(value);
     },
@@ -93,7 +91,7 @@ export const authorizationBearer = (
   regexp: /^Bearer .+$/,
   examples: {},
   decode: (value) => {
-    const matchResult = value.match(/Bearer (.*)/)?.[0];
+    const matchResult = value.match(/^Bearer (.+)$/)?.[1];
     if (matchResult === undefined) {
       throw new Error("invalid Authorization Bearer value");
     }

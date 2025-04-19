@@ -87,7 +87,7 @@ const handleOperation = async (
     try {
       return {
         type: "value",
-        name,
+        name: header.name,
         value: header.decode(request.headers.get(header.name) ?? undefined),
       };
     } catch (e) {
@@ -163,7 +163,7 @@ const handleOperation = async (
         if (e.type === "error") {
           throw new Error("expected error response");
         }
-        return [[e.name, e.value]];
+        return [e.name, e.value];
       }),
     ),
     headers: Object.fromEntries(
@@ -171,7 +171,7 @@ const handleOperation = async (
         if (e.type === "error") {
           throw new Error("expected error response");
         }
-        return [[e.name, e.value]];
+        return [e.name, e.value];
       }),
     ),
     body: matchedRequestBodyDefinition
