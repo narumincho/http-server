@@ -14,6 +14,9 @@ export type BodyDefinition<
   readonly [bodySymbol]: typeof bodySymbol;
 };
 
+// deno-lint-ignore no-explicit-any
+export type AnyBodyDefinition = BodyDefinition<string, any>;
+
 type Examples = {
   readonly [name: string]: ExampleObject;
 };
@@ -23,7 +26,7 @@ type Examples = {
  */
 export const textPlain = (
   { examples = { sampleText: { value: "サンプルテキスト" } } }: {
-    readonly examples: Examples;
+    readonly examples?: Examples;
   },
 ): BodyDefinition<
   "text/plain",

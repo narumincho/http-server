@@ -146,22 +146,38 @@ export function object<const T>(
 ): JsonDefinition<T> {
   return {
     decode: (json) => {
-      if (typeof json === "object" && json !== null && !Array.isArray(json)) {
-        const result: any = {};
-        for (const key in properties) {
-          result[key] = properties[key].decode((json as any)[key]);
-        }
-        return result as T;
+      if (typeof json === "object" && json !== null) {
+        return Object.fromEntries(
+          Object.entries<JsonDefinition<T[keyof T]>>(
+            properties as unknown as {
+              [key: string]: JsonDefinition<T[keyof T]>;
+            },
+          ).map((
+            [key, schema],
+          ) => [
+            key,
+            schema.decode(
+              (json as { readonly [x: string]: JsonValue })[key] ?? null,
+            ),
+          ]),
+        ) as T;
       }
       throw new Error("decode error expected object");
     },
     encode: (e) => {
       if (typeof e === "object" && e !== null && !Array.isArray(e)) {
-        const result: any = {};
-        for (const key in properties) {
-          result[key] = properties[key].encode((e as any)[key]);
-        }
-        return result;
+        return Object.fromEntries(
+          Object.entries(properties).map(
+            (
+              [key, schema],
+            ) => [
+              key,
+              (schema as JsonDefinition<unknown>).encode(
+                (e as Record<string, unknown>)[key],
+              ),
+            ],
+          ),
+        );
       }
       throw new Error("encode error expected object");
     },

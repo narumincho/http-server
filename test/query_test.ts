@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert";
-import { spy } from "jsr:@std/testing/mock";
+import { assertSpyCall, spy } from "jsr:@std/testing/mock";
 import {
   body,
   createHandler,
@@ -12,6 +12,7 @@ import { query } from "../mod.ts";
 import { Equal, Expect } from "npm:@type-challenges/utils";
 
 Deno.test("query parameter", async () => {
+  const func = spy((_headers: unknown): void => {});
   const handler = createHandler({
     operations: [
       operation.get({
@@ -33,9 +34,10 @@ Deno.test("query parameter", async () => {
             example: "こんなクエリ名を指定することはまずないけど",
           }),
         },
+        requestHeaders: [],
         responses: [response.ok({
           description: "",
-          content: [body.applicationJson(json.object({}))],
+          content: [body.textPlain({})],
         })],
         // deno-lint-ignore require-await
         handler: async ({ queryParameters }) => {
@@ -53,7 +55,8 @@ Deno.test("query parameter", async () => {
               >
             >,
           ];
-          return responseHelper.ok("application/json", queryParameters);
+          func(queryParameters);
+          return responseHelper.ok("text/plain", "");
         },
       }),
     ],
@@ -64,14 +67,15 @@ Deno.test("query parameter", async () => {
   url.searchParams.set("サンプルキー!", " &?=?&+");
   url.searchParams.set(" &?empty", "");
   url.searchParams.set("extra", "");
-  assertEquals(
-    await (await handler(new Request(url))).json(),
-    {
+  await handler(new Request(url));
+
+  assertSpyCall(func, 0, {
+    args: [{
       key: "value",
       "サンプルキー!": " &?=?&+",
       " &?empty": "",
-    },
-  );
+    }],
+  });
 });
 
 Deno.test("query parameter empty", async () => {
@@ -191,10 +195,14 @@ Deno.test("query parameter required", async () => {
   assertEquals(await handlerResponse.json(), {
     errors: [
       {
+        in: "query",
         message: "Error: must be specified in query c",
+        name: "c",
       },
       {
+        in: "query",
         message: "Error: must be specified in query d",
+        name: "d",
       },
     ],
   });

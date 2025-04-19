@@ -17,7 +17,7 @@ Deno.test("body", async () => {
         requestBody: {
           description: "",
           content: [
-            body.textPlain(),
+            body.textPlain({}),
             body.applicationOctetStream(),
             body.applicationJson(json.object({
               a: json.string(),
@@ -27,7 +27,7 @@ Deno.test("body", async () => {
         responses: [
           response.ok({
             description: "",
-            content: [body.applicationJson(json.object({}))],
+            content: [body.applicationJson(json.object({ a: json.string() }))],
           }),
         ],
         // deno-lint-ignore require-await
@@ -49,7 +49,9 @@ Deno.test("body", async () => {
               >
             >,
           ];
-          return responseHelper.ok("application/json", {});
+          return responseHelper.ok("application/json", {
+            a: body.content.toString(),
+          });
         },
       }),
     ],
@@ -65,7 +67,7 @@ Deno.test("body", async () => {
         },
       }),
     )).json(),
-    "sampleText",
+    { a: "sampleText" },
   );
 });
 
@@ -90,15 +92,15 @@ Deno.test("body empty", async () => {
               >
             >,
           ];
-          return responseHelper.ok("application/json", {});
+          return responseHelper.ok("application/json", body);
         },
       }),
     ],
   });
 
   assertEquals(
-    await (await handler(new Request("https://example.com/samplePath"))).json(),
-    null,
+    await (await handler(new Request("https://example.com/samplePath"))).text(),
+    "",
   );
 });
 
@@ -110,7 +112,7 @@ Deno.test("body unexpected Content-Type", async () => {
         requestBody: {
           description: "",
           content: [
-            body.textPlain(),
+            body.textPlain({}),
           ],
         },
         responses: [
@@ -120,11 +122,11 @@ Deno.test("body unexpected Content-Type", async () => {
           }),
         ],
         // deno-lint-ignore require-await
-        handler: async ({ body }) => {
+        handler: async ({ body: _body }) => {
           type cases = [
             Expect<
               Equal<
-                typeof body,
+                typeof _body,
                 {
                   readonly mimeType: "text/plain";
                   readonly content: string;

@@ -5,5 +5,10 @@
   },
   "tasks": {
     "example-start": "deno run --check --watch --allow-net=:8000 ./example.ts"
+  },
+  "exports": {
+    ".": "./mod.ts",
+    "./redoc": "./redoc.ts",
+    "./scalar": "./scalar.ts"
   }
 }
