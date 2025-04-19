@@ -1,24 +1,7 @@
 # http-server
 
-```mermaid
-graph TD;
+![JSR](https://jsr.io/badges/@narumincho/http-server)
 
-mod(mod.ts)
-json(json.ts)
-openApi(openApi.ts)
-query(query.ts)
-body(body.ts)
-response(response.ts)
-responseHeader(responseHeader.ts)
-operation(operation.ts)
+型がついたHTTP サーバー.
 
-json --> body
-query --> operation
-body --> operation
-responseHeader --> response 
-body --> response
-response --> operation
-operation --> openApi
-operation --> mod
-openApi --> mod
-```
+開発中

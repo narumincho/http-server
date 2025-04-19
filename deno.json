@@ -1,4 +1,7 @@
 {
+  "name": "@narumincho/http-server",
+  "version": "0.0.1",
+  "license": "MIT",
   "compilerOptions": {
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true
