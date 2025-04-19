@@ -6,7 +6,7 @@
     "jsr:@std/internal@^1.0.6": "1.0.6",
     "jsr:@std/testing@*": "1.0.10",
     "npm:@type-challenges/utils@*": "0.1.1",
-    "npm:openapi-typescript@*": "7.6.1_typescript@5.8.2"
+    "npm:openapi-typescript@^7.6.1": "7.6.1_typescript@5.8.2"
   },
   "jsr": {
     "@std/assert@1.0.12": {
@@ -180,5 +180,10 @@
     "yargs-parser@21.1.1": {
       "integrity": "sha512-tVpsJW7DdjecAiFpbIB1e3qxIQsE6NoPc5/eTdrbbIC4h0LVsWhnoa3g+m2HclBIujHzsxZ4VJVA+GUuc2/LBw=="
     }
+  },
+  "workspace": {
+    "dependencies": [
+      "npm:openapi-typescript@^7.6.1"
+    ]
   }
 }

@@ -21,7 +21,7 @@ export const supportedHttpMethodSet: ReadonlySet<string> = new Set(
   supportedHttpMethod,
 );
 
-const operationSymbol = Symbol();
+const operationSymbol: unique symbol = Symbol();
 
 type ExtractParams<Path extends string> = Path extends
   `${string}/:${infer Param}/${infer Rest}`

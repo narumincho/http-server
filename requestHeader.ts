@@ -1,4 +1,4 @@
-const requestHeaderDefinitionSymbol = Symbol();
+const requestHeaderDefinitionSymbol: unique symbol = Symbol();
 
 export type RequestHeaderDefinition<
   Name extends string,
@@ -62,7 +62,7 @@ export function optional<const Name extends string, const T>(
   };
 }
 
-const requestHeaderItemDefinitionSymbol = Symbol();
+const requestHeaderItemDefinitionSymbol: unique symbol = Symbol();
 
 // カンマ区切りのヘッダーのサポートをする? どれくらいのヘッダーがサポートしているのか. また Authorization は複数指定してはいけないらしい
 

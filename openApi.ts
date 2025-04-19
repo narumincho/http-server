@@ -7,7 +7,7 @@ import {
   RequestBodyObject,
   ResponseObject,
   SchemaObject,
-} from "npm:openapi-typescript";
+} from "openapi-typescript";
 import { OperationInternal } from "./operation.ts";
 import { body, json, operation, response } from "./mod.ts";
 

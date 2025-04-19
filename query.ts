@@ -5,7 +5,7 @@ export type QueryValueType =
   | "boolean"
   | "enum";
 
-const queryDefinitionSymbol = Symbol();
+const queryDefinitionSymbol: unique symbol = Symbol();
 
 export type QueryValueTypeToTsType<type extends QueryValueType> = {
   string: string;
@@ -32,7 +32,7 @@ export type QueryDefinition<
 
 type QueryBaseType = "required" | "optional" | "array";
 
-const queryItemDefinitionSymbol = Symbol();
+const queryItemDefinitionSymbol: unique symbol = Symbol();
 
 export type QueryItemDefinition<in out T> = {
   readonly typeHint: QueryValueType;

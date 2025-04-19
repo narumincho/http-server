@@ -1,4 +1,4 @@
-import type { SchemaObject } from "npm:openapi-typescript";
+import type { SchemaObject } from "openapi-typescript";
 
 type JsonValue =
   | string
@@ -8,7 +8,7 @@ type JsonValue =
   | ReadonlyArray<JsonValue>
   | { readonly [key in string]: JsonValue };
 
-const jsonTypeDefinitionSymbol = Symbol();
+const jsonTypeDefinitionSymbol: unique symbol = Symbol();
 
 export type JsonDefinition<Type> = {
   decode: (json: JsonValue) => Type;

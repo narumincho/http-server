@@ -1,7 +1,7 @@
-import { ExampleObject, MediaTypeObject } from "npm:openapi-typescript";
-import { JsonDefinition } from "./json.ts";
+import type { ExampleObject, MediaTypeObject } from "openapi-typescript";
+import type { JsonDefinition } from "./json.ts";
 
-const bodySymbol = Symbol();
+const bodySymbol: unique symbol = Symbol();
 
 export type BodyDefinition<
   MimeType extends string,

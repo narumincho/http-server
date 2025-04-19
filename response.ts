@@ -1,6 +1,6 @@
-import { AnyBodyDefinition } from "./body.ts";
+import type { AnyBodyDefinition } from "./body.ts";
 
-const responseObjectDefinitionSymbol = Symbol();
+const responseObjectDefinitionSymbol: unique symbol = Symbol();
 
 export type ResponseObjectDefinition<
   StatusCode extends string,

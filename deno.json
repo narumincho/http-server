@@ -13,5 +13,8 @@
     ".": "./mod.ts",
     "./redoc": "./redoc.ts",
     "./scalar": "./scalar.ts"
+  },
+  "imports": {
+    "openapi-typescript": "npm:openapi-typescript@^7.6.1"
   }
 }
