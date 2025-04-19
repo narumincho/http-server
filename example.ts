@@ -34,7 +34,7 @@ const operations: Parameters<typeof createHandler>["0"]["operations"] = [
       }),
     },
     requestHeaders: [
-      requestHeader.authorizationBearer({ required: true, deprecated: false }),
+      requestHeader.required(requestHeader.authorizationBearer({}), {}),
     ],
     responses: [
       response.ok({

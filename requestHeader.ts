@@ -8,10 +8,15 @@ export type RequestHeaderDefinition<
   readonly required: boolean;
   readonly deprecated: boolean;
   readonly item: RequestHeaderItemDefinition<Name, T>;
-  readonly decode: (value: string) => T;
+  readonly decode: (value: string | undefined) => T;
   readonly [requestHeaderDefinitionSymbol]:
     typeof requestHeaderDefinitionSymbol;
 };
+
+export type RequestHeaderDefinitionExtend = RequestHeaderDefinition<
+  string,
+  unknown
+>;
 
 export function required<const Name extends string, const T>(
   itemDefinition: RequestHeaderItemDefinition<Name, T>,
@@ -70,6 +75,7 @@ export type RequestHeaderItemDefinition<
   readonly name: Name;
   readonly description: string;
   readonly regexp: RegExp;
+  readonly examples: Record<string, T>;
   // レスポンスヘッダー set-cookie だけ複数になる
   readonly decode: (value: string) => T;
   readonly [requestHeaderItemDefinitionSymbol]:
@@ -80,11 +86,12 @@ export type RequestHeaderItemDefinition<
  * http://developer.mozilla.org/docs/Web/HTTP/Reference/Headers/Authorization
  */
 export const authorizationBearer = (
-  {}: {},
+  {}: Record<string | number | symbol, never>,
 ): RequestHeaderItemDefinition<"Authorization", string> => ({
   name: "Authorization",
   description: "",
   regexp: /^Bearer .+$/,
+  examples: {},
   decode: (value) => {
     const matchResult = value.match(/Bearer (.*)/)?.[0];
     if (matchResult === undefined) {

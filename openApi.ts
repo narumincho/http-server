@@ -100,13 +100,13 @@ const operationToObject = (operation: OperationInternal): OperationObject => {
       ...operation.requestHeaders.map((requestHeader): ParameterObject => ({
         in: "header",
         name: requestHeader.name,
-        description: requestHeader.description,
+        description: requestHeader.item.description,
         deprecated: requestHeader.deprecated,
         required: requestHeader.required,
-        examples: requestHeader.examples,
+        // examples: requestHeader.item.examples,
         schema: {
           type: "string",
-          pattern: requestHeader.regexp.source,
+          pattern: requestHeader.item.regexp.source,
         } as SchemaObject,
       })),
     ],

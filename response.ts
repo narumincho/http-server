@@ -1,10 +1,10 @@
-import { BodyDefinition } from "./body.ts";
+import { AnyBodyDefinition } from "./body.ts";
 
 const responseObjectDefinitionSymbol = Symbol();
 
 export type ResponseObjectDefinition<
   StatusCode extends string,
-  BodyDefinitions extends ReadonlyArray<BodyDefinition<string, any>>,
+  BodyDefinitions extends ReadonlyArray<AnyBodyDefinition>,
 > = {
   readonly statusCode: StatusCode;
   readonly description: string;
@@ -17,8 +17,7 @@ export type ResponseObjectDefinition<
  * status 200
  */
 export function ok<
-  const BodyDefinitions extends ReadonlyArray<BodyDefinition<string, any>> =
-    never,
+  const BodyDefinitions extends ReadonlyArray<AnyBodyDefinition> = never,
 >(
   { description, content }: {
     readonly description: string;

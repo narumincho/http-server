@@ -14,6 +14,9 @@ export type BodyDefinition<
   readonly [bodySymbol]: typeof bodySymbol;
 };
 
+// deno-lint-ignore no-explicit-any
+export type AnyBodyDefinition = BodyDefinition<string, any>;
+
 type Examples = {
   readonly [name: string]: ExampleObject;
 };

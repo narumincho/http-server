@@ -122,11 +122,11 @@ Deno.test("body unexpected Content-Type", async () => {
           }),
         ],
         // deno-lint-ignore require-await
-        handler: async ({ body }) => {
+        handler: async ({ body: _body }) => {
           type cases = [
             Expect<
               Equal<
-                typeof body,
+                typeof _body,
                 {
                   readonly mimeType: "text/plain";
                   readonly content: string;
