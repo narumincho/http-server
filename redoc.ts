@@ -14,6 +14,7 @@ export const createRedocOperation = (
     path,
     responses: [response.ok({
       description: "Redoc documentation",
+      headers: [],
       content: [body.textHtml({})],
     })],
     // deno-lint-ignore require-await

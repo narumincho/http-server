@@ -25,6 +25,7 @@ export const createOpenApiOperation = ({ path, handler }: {
     path,
     responses: [response.ok({
       description: "Open API schema",
+      headers: [],
       content: [body.applicationJson(json.object({
         openapi: json.string(),
       }))],

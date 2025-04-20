@@ -1,7 +1,11 @@
-import { QueryDefinition } from "./query.ts";
-import { AnyBodyDefinition, BodyDefinition } from "./body.ts";
-import { ResponseObjectDefinition } from "./response.ts";
-import { RequestHeaderDefinition } from "./requestHeader.ts";
+import type { QueryDefinition } from "./query.ts";
+import type { AnyBodyDefinition, BodyDefinition } from "./body.ts";
+import type { AnyResponseDefinition, ResponseDefinition } from "./response.ts";
+import type { AnyRequestHeaderDefinition } from "./requestHeader.ts";
+import type {
+  AnyResponseHeaderDefinition,
+  ResponseHeaderDefinition,
+} from "./responseHeader.ts";
 
 const supportedHttpMethod = [
   "GET",
@@ -32,16 +36,9 @@ type ExtractParams<Path extends string> = Path extends
 type OperationInput<
   Path extends string,
   QueryParameters extends Record<string, QueryDefinition<unknown>>,
-  RequestHeaders extends ReadonlyArray<
-    RequestHeaderDefinition<string, unknown>
-  >,
+  RequestHeaders extends ReadonlyArray<AnyRequestHeaderDefinition>,
   RequestBodyContent extends ReadonlyArray<AnyBodyDefinition>,
-  Responses extends ReadonlyArray<
-    ResponseObjectDefinition<
-      string,
-      ReadonlyArray<AnyBodyDefinition>
-    >
-  >,
+  Responses extends ReadonlyArray<AnyResponseDefinition>,
 > = {
   readonly path: Path;
   readonly method: HttpMethod;
@@ -74,16 +71,9 @@ type OperationInput<
 export type CreateHandlerType<
   Path extends string,
   QueryParameters extends Record<string, QueryDefinition<unknown>>,
-  RequestHeaders extends ReadonlyArray<
-    RequestHeaderDefinition<string, unknown>
-  >,
+  RequestHeaders extends ReadonlyArray<AnyRequestHeaderDefinition>,
   RequestBodyContent extends ReadonlyArray<AnyBodyDefinition>,
-  Responses extends ReadonlyArray<
-    ResponseObjectDefinition<
-      string,
-      ReadonlyArray<AnyBodyDefinition>
-    >
-  >,
+  Responses extends ReadonlyArray<AnyResponseDefinition>,
 > = (
   request: {
     readonly pathParameters: ExtractParams<Path>;
@@ -104,13 +94,17 @@ type BodyTransform<T extends AnyBodyDefinition> = T extends
   ? { readonly mimeType: M; readonly content: C }
   : `expected BodyDefinition<M, C>`;
 
+type HeaderTransform<T extends AnyResponseHeaderDefinition> = T extends
+  ResponseHeaderDefinition<infer N, infer V> ? { readonly [k in N]: V }
+  : `expected ResponseHeaderDefinition<N, V>`;
+
 export type ResponseTransform<
-  T extends ResponseObjectDefinition<
-    string,
-    ReadonlyArray<AnyBodyDefinition>
-  >,
-> = T extends ResponseObjectDefinition<infer S, infer B>
-  ? { readonly statusCode: S; readonly content: BodyTransform<B[number]> }
+  T extends AnyResponseDefinition,
+> = T extends ResponseDefinition<infer S, infer H, infer B> ? {
+    readonly statusCode: S;
+    readonly headers: HeaderTransform<H[number]>;
+    readonly content: BodyTransform<B[number]>;
+  }
   : `expected ResponseObjectDefinition<S, B>`;
 
 export type OperationInternal = {
@@ -125,22 +119,18 @@ export type OperationInternal = {
     readonly description: string;
     readonly content: ReadonlyArray<AnyBodyDefinition>;
   } | undefined;
-  readonly requestHeaders: ReadonlyArray<
-    RequestHeaderDefinition<string, unknown>
-  >;
-  readonly responses: ReadonlyArray<
-    ResponseObjectDefinition<
-      string,
-      ReadonlyArray<AnyBodyDefinition>
-    >
-  >;
+  readonly requestHeaders: ReadonlyArray<AnyRequestHeaderDefinition>;
+  readonly responses: ReadonlyArray<AnyResponseDefinition>;
   readonly handler: (
     request: {
       readonly pathParameters: ExtractParams<string>;
       readonly queryParameters: Record<string, unknown>;
       readonly headers: Record<string, unknown>;
       readonly body:
-        | { readonly mimeType: string; readonly content: unknown }
+        | {
+          readonly mimeType: string;
+          readonly content: unknown;
+        }
         | undefined;
     },
   ) => Promise<
@@ -148,6 +138,7 @@ export type OperationInternal = {
       readonly statusCode: string;
       readonly content: {
         readonly mimeType: string;
+        readonly headers: Record<string, unknown>;
         readonly content: unknown;
       };
     }
@@ -159,18 +150,10 @@ export function createOperation<
   const Path extends string,
   const QueryParameters extends Record<string, QueryDefinition<unknown>> =
     never,
-  const RequestHeaders extends ReadonlyArray<
-    RequestHeaderDefinition<string, unknown>
-  > = never,
-  const RequestBodyContent extends ReadonlyArray<
-    AnyBodyDefinition
-  > = never,
-  const Responses extends ReadonlyArray<
-    ResponseObjectDefinition<
-      string,
-      ReadonlyArray<AnyBodyDefinition>
-    >
-  > = never,
+  const RequestHeaders extends ReadonlyArray<AnyRequestHeaderDefinition> =
+    never,
+  const RequestBodyContent extends ReadonlyArray<AnyBodyDefinition> = never,
+  const Responses extends ReadonlyArray<AnyResponseDefinition> = never,
 >(
   {
     path,
@@ -217,6 +200,7 @@ export function createOperation<
         readonly statusCode: string;
         readonly content: {
           readonly mimeType: string;
+          readonly headers: Record<string, unknown>;
           readonly content: unknown;
         };
       }
@@ -229,15 +213,9 @@ export function get<
   const Path extends string,
   const QueryParameters extends Record<string, QueryDefinition<unknown>> =
     never,
-  const RequestHeaders extends ReadonlyArray<
-    RequestHeaderDefinition<string, unknown>
-  > = never,
-  const Responses extends ReadonlyArray<
-    ResponseObjectDefinition<
-      string,
-      ReadonlyArray<AnyBodyDefinition>
-    >
-  > = never,
+  const RequestHeaders extends ReadonlyArray<AnyRequestHeaderDefinition> =
+    never,
+  const Responses extends ReadonlyArray<AnyResponseDefinition> = never,
 >(
   { path, description, requestHeaders, queryParameters, responses, handler }:
     Omit<
@@ -272,16 +250,10 @@ export function post<
   const Path extends string,
   const QueryParameters extends Record<string, QueryDefinition<unknown>> =
     never,
-  const RequestHeaders extends ReadonlyArray<
-    RequestHeaderDefinition<string, unknown>
-  > = never,
+  const RequestHeaders extends ReadonlyArray<AnyRequestHeaderDefinition> =
+    never,
   const RequestBodyContent extends ReadonlyArray<AnyBodyDefinition> = never,
-  const Responses extends ReadonlyArray<
-    ResponseObjectDefinition<
-      string,
-      ReadonlyArray<AnyBodyDefinition>
-    >
-  > = never,
+  const Responses extends ReadonlyArray<AnyResponseDefinition> = never,
 >(
   {
     path,
@@ -324,18 +296,10 @@ function delete_<
   const Path extends string,
   const QueryParameters extends Record<string, QueryDefinition<unknown>> =
     never,
-  const RequestHeaders extends ReadonlyArray<
-    RequestHeaderDefinition<string, unknown>
-  > = never,
-  const RequestBodyContent extends ReadonlyArray<
-    AnyBodyDefinition
-  > = never,
-  const Responses extends ReadonlyArray<
-    ResponseObjectDefinition<
-      string,
-      ReadonlyArray<AnyBodyDefinition>
-    >
-  > = never,
+  const RequestHeaders extends ReadonlyArray<AnyRequestHeaderDefinition> =
+    never,
+  const RequestBodyContent extends ReadonlyArray<AnyBodyDefinition> = never,
+  const Responses extends ReadonlyArray<AnyResponseDefinition> = never,
 >(
   { path, description, queryParameters, requestHeaders, responses, handler }:
     Omit<
@@ -372,18 +336,10 @@ export function patch<
   const Path extends string,
   const QueryParameters extends Record<string, QueryDefinition<unknown>> =
     never,
-  const RequestHeaders extends ReadonlyArray<
-    RequestHeaderDefinition<string, unknown>
-  > = never,
-  const RequestBodyContent extends ReadonlyArray<
-    AnyBodyDefinition
-  > = never,
-  const Responses extends ReadonlyArray<
-    ResponseObjectDefinition<
-      string,
-      ReadonlyArray<AnyBodyDefinition>
-    >
-  > = never,
+  const RequestHeaders extends ReadonlyArray<AnyRequestHeaderDefinition> =
+    never,
+  const RequestBodyContent extends ReadonlyArray<AnyBodyDefinition> = never,
+  const Responses extends ReadonlyArray<AnyResponseDefinition> = never,
 >(
   {
     path,

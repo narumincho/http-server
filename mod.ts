@@ -1,4 +1,4 @@
-import { OperationInternal, supportedHttpMethodSet } from "./operation.ts";
+import { type OperationInternal, supportedHttpMethodSet } from "./operation.ts";
 
 export * as json from "./json.ts";
 export * as query from "./query.ts";

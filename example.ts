@@ -39,6 +39,7 @@ const operations: Parameters<typeof createHandler>["0"]["operations"] = [
     responses: [
       response.ok({
         description: "取得結果を返します",
+        headers: [],
         content: [
           body.applicationJson(json.array(json.object({
             name: json.string(),
