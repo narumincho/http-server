@@ -12,7 +12,6 @@ jobs:
         uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-        # https://github.com/denoland/deno/pull/28655 この変更が取り込まれたら . を消す
       - run: deno check .
       - run: deno lint
       - run: deno test
