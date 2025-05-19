@@ -8,7 +8,6 @@ import {
   operation,
   requestHeader,
   response,
-  responseHelper,
 } from "../mod.ts";
 import type { Equal, Expect } from "npm:@type-challenges/utils";
 
@@ -30,7 +29,7 @@ Deno.test("requestHeader optional", async () => {
           content: [body.textPlain({})],
         })],
         // deno-lint-ignore require-await
-        handler: async ({ headers }) => {
+        handler: async ({ headers, response }) => {
           type cases = [
             Expect<
               Equal<
@@ -42,7 +41,7 @@ Deno.test("requestHeader optional", async () => {
             >,
           ];
           func(headers);
-          return responseHelper.ok([], "text/plain", "");
+          return response["200"]([], "text/plain", "");
         },
       }),
     ],
@@ -96,7 +95,7 @@ Deno.test("requestHeader required", async () => {
           content: [body.applicationJson(json.object({}))],
         })],
         // deno-lint-ignore require-await
-        handler: async ({ headers }) => {
+        handler: async ({ headers, response }) => {
           type cases = [
             Expect<
               Equal<
@@ -107,7 +106,7 @@ Deno.test("requestHeader required", async () => {
               >
             >,
           ];
-          return responseHelper.ok([], "application/json", headers);
+          return response["200"]([], "application/json", headers);
         },
       }),
     ],

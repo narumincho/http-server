@@ -6,7 +6,6 @@ export * as body from "./body.ts";
 export * as operation from "./operation.ts";
 export * as requestHeader from "./requestHeader.ts";
 export * as response from "./response.ts";
-export * as responseHelper from "./responseHelper.ts";
 export * as responseHeader from "./responseHeader.ts";
 
 export const createHandler = (
@@ -181,6 +180,8 @@ const handleOperation = async (
         content: await matchedRequestBodyDefinition.decode(request),
       }
       : undefined,
+    // TODO
+    response: {},
   });
   const matchedResponseObject = operation.responses.find((responseSchema) =>
     responseSchema.statusCode === responseValue.statusCode

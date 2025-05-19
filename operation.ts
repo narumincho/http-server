@@ -2,7 +2,11 @@ import type { QueryDefinition } from "./query.ts";
 import type { AnyBodyDefinition } from "./body.ts";
 import type { AnyResponseDefinition } from "./response.ts";
 import type { AnyRequestHeaderDefinition } from "./requestHeader.ts";
-import type { BodyTransform, ResponseTransform } from "./responseHelper.ts";
+import type {
+  BodyTransform,
+  ResponseTransform,
+  TypedResponse,
+} from "./responseHelper.ts";
 
 const supportedHttpMethod = [
   "GET",
@@ -83,6 +87,19 @@ export type CreateHandlerType<
       ]: ReturnType<requestHeader["decode"]>;
     };
     readonly body: BodyTransform<RequestBodyContent[number]>;
+    readonly response: ResponseTransform<Responses[number]> extends
+      TypedResponse<
+        infer S,
+        infer H,
+        infer B
+      > ? {
+        [key in S]: (
+          headers: H,
+          mimeType: BodyTransform<B>["mimeType"],
+          content: BodyTransform<B>["content"],
+        ) => ResponseTransform<Responses[number]>;
+      }
+      : never;
   },
 ) => Promise<ResponseTransform<Responses[number]>>;
 
@@ -101,7 +118,7 @@ export type OperationInternal = {
   readonly requestHeaders: ReadonlyArray<AnyRequestHeaderDefinition>;
   readonly responses: ReadonlyArray<AnyResponseDefinition>;
   readonly handler: (
-    request: {
+    parameter: {
       readonly pathParameters: ExtractParams<string>;
       readonly queryParameters: Record<string, unknown>;
       readonly headers: Record<string, unknown>;
@@ -111,6 +128,14 @@ export type OperationInternal = {
           readonly content: unknown;
         }
         | undefined;
+      readonly response: Record<
+        string,
+        (
+          headers: ReadonlyArray<string>,
+          mimeType: string,
+          content: unknown,
+        ) => unknown
+      >;
     },
   ) => Promise<
     {
