@@ -1,11 +1,8 @@
 import type { QueryDefinition } from "./query.ts";
-import type { AnyBodyDefinition, BodyDefinition } from "./body.ts";
-import type { AnyResponseDefinition, ResponseDefinition } from "./response.ts";
+import type { AnyBodyDefinition } from "./body.ts";
+import type { AnyResponseDefinition } from "./response.ts";
 import type { AnyRequestHeaderDefinition } from "./requestHeader.ts";
-import type {
-  AnyResponseHeaderDefinition,
-  ResponseHeaderDefinition,
-} from "./responseHeader.ts";
+import type { BodyTransform, ResponseTransform } from "./responseHelper.ts";
 
 const supportedHttpMethod = [
   "GET",
@@ -88,24 +85,6 @@ export type CreateHandlerType<
     readonly body: BodyTransform<RequestBodyContent[number]>;
   },
 ) => Promise<ResponseTransform<Responses[number]>>;
-
-type BodyTransform<T extends AnyBodyDefinition> = T extends
-  BodyDefinition<infer M, infer C>
-  ? { readonly mimeType: M; readonly content: C }
-  : `expected BodyDefinition<M, C>`;
-
-type HeaderTransform<T extends AnyResponseHeaderDefinition> = T extends
-  ResponseHeaderDefinition<infer N, infer V> ? { readonly [k in N]: V }
-  : `expected ResponseHeaderDefinition<N, V>`;
-
-export type ResponseTransform<
-  T extends AnyResponseDefinition,
-> = T extends ResponseDefinition<infer S, infer H, infer B> ? {
-    readonly statusCode: S;
-    readonly headers: HeaderTransform<H[number]>;
-    readonly content: BodyTransform<B[number]>;
-  }
-  : `expected ResponseObjectDefinition<S, B>`;
 
 export type OperationInternal = {
   readonly path: string;

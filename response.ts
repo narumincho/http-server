@@ -24,6 +24,7 @@ export type AnyResponseDefinition = ResponseDefinition<
 
 /**
  * status 200
+ * @see https://developer.mozilla.org/docs/Web/HTTP/Reference/Status/200
  */
 export function ok<
   const BodyDefinitions extends ReadonlyArray<AnyBodyDefinition> = never,

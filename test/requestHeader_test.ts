@@ -10,7 +10,7 @@ import {
   response,
   responseHelper,
 } from "../mod.ts";
-import { Equal, Expect } from "npm:@type-challenges/utils";
+import type { Equal, Expect } from "npm:@type-challenges/utils";
 
 Deno.test("requestHeader optional", async () => {
   const func = spy((_headers: unknown): void => {});
@@ -26,6 +26,7 @@ Deno.test("requestHeader optional", async () => {
         ],
         responses: [response.ok({
           description: "",
+          headers: [],
           content: [body.textPlain({})],
         })],
         // deno-lint-ignore require-await
@@ -41,7 +42,7 @@ Deno.test("requestHeader optional", async () => {
             >,
           ];
           func(headers);
-          return responseHelper.ok("text/plain", "");
+          return responseHelper.ok([], "text/plain", "");
         },
       }),
     ],
@@ -91,6 +92,7 @@ Deno.test("requestHeader required", async () => {
         ],
         responses: [response.ok({
           description: "",
+          headers: [],
           content: [body.applicationJson(json.object({}))],
         })],
         // deno-lint-ignore require-await
@@ -105,7 +107,7 @@ Deno.test("requestHeader required", async () => {
               >
             >,
           ];
-          return responseHelper.ok("application/json", headers);
+          return responseHelper.ok([], "application/json", headers);
         },
       }),
     ],

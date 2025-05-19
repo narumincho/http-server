@@ -7,6 +7,7 @@ export * as operation from "./operation.ts";
 export * as requestHeader from "./requestHeader.ts";
 export * as response from "./response.ts";
 export * as responseHelper from "./responseHelper.ts";
+export * as responseHeader from "./responseHeader.ts";
 
 export const createHandler = (
   { operations }: {
