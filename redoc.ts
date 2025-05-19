@@ -1,5 +1,5 @@
-import { body, operation, response, responseHelper } from "./mod.ts";
-import { OperationInternal } from "./operation.ts";
+import { body, operation, response } from "./mod.ts";
+import type { OperationInternal } from "./operation.ts";
 
 /**
  * https://github.com/Redocly/redoc
@@ -14,11 +14,13 @@ export const createRedocOperation = (
     path,
     responses: [response.ok({
       description: "Redoc documentation",
+      headers: [],
       content: [body.textHtml({})],
     })],
     // deno-lint-ignore require-await
-    handler: async () => {
-      return responseHelper.ok(
+    handler: async ({ response }) => {
+      return response["200"](
+        {},
         "text/html",
         `<!doctype html>
 <html>

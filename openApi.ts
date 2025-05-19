@@ -1,4 +1,4 @@
-import {
+import type {
   InfoObject,
   MediaTypeObject,
   OpenAPI3,
@@ -8,23 +8,36 @@ import {
   ResponseObject,
   SchemaObject,
 } from "openapi-typescript";
-import { OperationInternal } from "./operation.ts";
+import type { OperationInternal } from "./operation.ts";
 import { body, json, operation, response } from "./mod.ts";
 
 export const createOpenApiOperation = ({ path, handler }: {
   readonly path: string;
-  readonly handler: () => Promise<{
-    readonly statusCode: "200";
-    readonly content: {
-      readonly mimeType: "application/json";
-      readonly content: OpenAPI3;
-    };
-  }>;
+  readonly handler: operation.CreateHandlerType<
+    string,
+    never,
+    never,
+    never,
+    NoInfer<
+      readonly [
+        response.ResponseDefinition<
+          "200",
+          readonly [],
+          readonly [
+            body.BodyDefinition<"application/json", {
+              openapi: string;
+            }>,
+          ]
+        >,
+      ]
+    >
+  >;
 }): OperationInternal =>
   operation.get({
     path,
     responses: [response.ok({
       description: "Open API schema",
+      headers: [],
       content: [body.applicationJson(json.object({
         openapi: json.string(),
       }))],
@@ -35,39 +48,27 @@ export const createOpenApiOperation = ({ path, handler }: {
 export function createOpenApi({ info, operations: paths }: {
   readonly info: InfoObject;
   readonly operations: ReadonlyArray<OperationInternal>;
-}): {
-  readonly statusCode: "200";
-  readonly content: {
-    readonly mimeType: "application/json";
-    readonly content: OpenAPI3;
-  };
-} {
+}): OpenAPI3 {
   return {
-    statusCode: "200",
-    content: {
-      mimeType: "application/json",
-      content: {
-        openapi: "3.1.1",
-        info,
-        paths: Object.fromEntries(
-          [...Map.groupBy(paths, (path) => path.path)].map((
-            [path, operations],
-          ) => [
-            path,
-            Object.fromEntries<OperationObject>(
-              operations.map(
-                (
-                  operation,
-                ): [string, OperationObject] => [
-                  operation.method.toLowerCase(),
-                  operationToObject(operation),
-                ],
-              ),
-            ),
-          ]),
+    openapi: "3.1.1",
+    info,
+    paths: Object.fromEntries(
+      [...Map.groupBy(paths, (path) => path.path)].map((
+        [path, operations],
+      ) => [
+        path,
+        Object.fromEntries<OperationObject>(
+          operations.map(
+            (
+              operation,
+            ): [string, OperationObject] => [
+              operation.method.toLowerCase(),
+              operationToObject(operation),
+            ],
+          ),
         ),
-      },
-    },
+      ]),
+    ),
   };
 }
 

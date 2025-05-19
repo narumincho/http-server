@@ -13,7 +13,7 @@ export type RequestHeaderDefinition<
     typeof requestHeaderDefinitionSymbol;
 };
 
-export type RequestHeaderDefinitionExtend = RequestHeaderDefinition<
+export type AnyRequestHeaderDefinition = RequestHeaderDefinition<
   string,
   unknown
 >;
@@ -64,8 +64,6 @@ export function optional<const Name extends string, const T>(
 
 const requestHeaderItemDefinitionSymbol: unique symbol = Symbol();
 
-// カンマ区切りのヘッダーのサポートをする? どれくらいのヘッダーがサポートしているのか. また Authorization は複数指定してはいけないらしい
-
 export type RequestHeaderItemDefinition<
   Name extends string,
   T extends unknown,
@@ -74,7 +72,6 @@ export type RequestHeaderItemDefinition<
   readonly description: string;
   readonly regexp: RegExp;
   readonly examples: Record<string, T>;
-  // レスポンスヘッダー set-cookie だけ複数になる
   readonly decode: (value: string) => T;
   readonly [requestHeaderItemDefinitionSymbol]:
     typeof requestHeaderItemDefinitionSymbol;
@@ -82,20 +79,26 @@ export type RequestHeaderItemDefinition<
 
 /**
  * http://developer.mozilla.org/docs/Web/HTTP/Reference/Headers/Authorization
+ *
+ * ```txt
+ * Authorization: Bearer sampleToken
+ * ```
  */
-export const authorizationBearer = (
+export function authorizationBearer(
   {}: Record<string | number | symbol, never>,
-): RequestHeaderItemDefinition<"Authorization", string> => ({
-  name: "Authorization",
-  description: "",
-  regexp: /^Bearer .+$/,
-  examples: {},
-  decode: (value) => {
-    const matchResult = value.match(/^Bearer (.+)$/)?.[1];
-    if (matchResult === undefined) {
-      throw new Error("invalid Authorization Bearer value");
-    }
-    return matchResult;
-  },
-  [requestHeaderItemDefinitionSymbol]: requestHeaderItemDefinitionSymbol,
-});
+): RequestHeaderItemDefinition<"Authorization", string> {
+  return ({
+    name: "Authorization",
+    description: "",
+    regexp: /^Bearer .+$/,
+    examples: {},
+    decode: (value) => {
+      const matchResult = value.match(/^Bearer (.+)$/)?.[1];
+      if (matchResult === undefined) {
+        throw new Error("invalid Authorization Bearer value");
+      }
+      return matchResult;
+    },
+    [requestHeaderItemDefinitionSymbol]: requestHeaderItemDefinitionSymbol,
+  });
+}
