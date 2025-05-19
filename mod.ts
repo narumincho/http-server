@@ -156,7 +156,7 @@ const handleOperation = async (
     );
   }
 
-  const responseValue = await operation.handler({
+  return await operation.handler({
     pathParameters: result.pathname.groups as Record<string, never>,
     queryParameters: Object.fromEntries(
       queryParameters.map((e) => {
@@ -180,28 +180,29 @@ const handleOperation = async (
         content: await matchedRequestBodyDefinition.decode(request),
       }
       : undefined,
-    // TODO
-    response: {},
-  });
-  const matchedResponseObject = operation.responses.find((responseSchema) =>
-    responseSchema.statusCode === responseValue.statusCode
-  );
-  if (!matchedResponseObject) {
-    throw new Error(
-      `status code error. schema expected = ${
-        operation.responses.map((responseSchema) => responseSchema.statusCode)
-      }. but got ${responseValue.statusCode}`,
-    );
-  }
-  const matchedBody = matchedResponseObject.content.find((body) =>
-    body.mimeType === responseValue.content.mimeType
-  );
-  if (!matchedBody) {
-    throw new Error("internal error. unknown mimeType");
-  }
-  return new Response(await matchedBody.encode(responseValue.content.content), {
-    headers: {
-      "Content-Type": responseValue.content.mimeType,
-    },
+    response: Object.fromEntries(operation.responses.map((
+      response,
+    ) => [response.statusCode, async (headers, mimeType, content) => {
+      const matchedBody = response.content.find((body) =>
+        body.mimeType === mimeType
+      );
+      if (!matchedBody) {
+        throw new Error("internal error. unknown mimeType");
+      }
+      return new Response(
+        await matchedBody.encode(content),
+        {
+          headers: {
+            ...Object.fromEntries(response.headers.map((
+              headerDefinition,
+            ) => [
+              headerDefinition.name,
+              headerDefinition.encode(headers[headerDefinition.name] as never),
+            ])),
+            "Content-Type": mimeType,
+          },
+        },
+      );
+    }])),
   });
 };

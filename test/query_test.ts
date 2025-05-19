@@ -1,15 +1,8 @@
 import { assertEquals } from "jsr:@std/assert";
 import { assertSpyCall, spy } from "jsr:@std/testing/mock";
-import {
-  body,
-  createHandler,
-  json,
-  operation,
-  response,
-  responseHelper,
-} from "../mod.ts";
+import { body, createHandler, json, operation, response } from "../mod.ts";
 import { query } from "../mod.ts";
-import { Equal, Expect } from "npm:@type-challenges/utils";
+import type { Equal, Expect } from "npm:@type-challenges/utils";
 
 Deno.test("query parameter", async () => {
   const func = spy((_headers: unknown): void => {});
@@ -36,11 +29,12 @@ Deno.test("query parameter", async () => {
         },
         requestHeaders: [],
         responses: [response.ok({
+          headers: [],
           description: "",
           content: [body.textPlain({})],
         })],
         // deno-lint-ignore require-await
-        handler: async ({ queryParameters }) => {
+        handler: async ({ queryParameters, response }) => {
           type cases = [
             Expect<
               Equal<
@@ -56,7 +50,7 @@ Deno.test("query parameter", async () => {
             >,
           ];
           func(queryParameters);
-          return responseHelper.ok("text/plain", "");
+          return response["200"]({}, "text/plain", "");
         },
       }),
     ],
@@ -84,11 +78,12 @@ Deno.test("query parameter empty", async () => {
       operation.get({
         path: "/samplePath",
         responses: [response.ok({
+          headers: [],
           description: "",
           content: [body.applicationJson(json.object({}))],
         })],
         // deno-lint-ignore require-await
-        handler: async ({ queryParameters }) => {
+        handler: async ({ queryParameters, response }) => {
           type cases = [
             Expect<
               Equal<
@@ -97,7 +92,7 @@ Deno.test("query parameter empty", async () => {
               >
             >,
           ];
-          return responseHelper.ok("application/json", queryParameters);
+          return response["200"]({}, "application/json", queryParameters);
         },
       }),
     ],
@@ -112,34 +107,6 @@ Deno.test("query parameter empty", async () => {
 });
 
 Deno.test("query parameter required", async () => {
-  const samplePathHandler = spy<
-    void,
-    [{
-      readonly pathParameters: Record<string, Record<string, unknown>>;
-      readonly queryParameters: {
-        a: string | undefined;
-        b: string | undefined;
-        c: string | undefined;
-        d: string | undefined;
-        e: string | undefined;
-        enum: "A" | "B" | "C" | undefined;
-      };
-    }],
-    Promise<
-      {
-        statusCode: "200";
-        content: { mimeType: "application/json"; content: unknown };
-      }
-    >
-  > // deno-lint-ignore require-await
-  (async () => ({
-    statusCode: "200",
-    content: {
-      mimeType: "application/json",
-      content: {},
-    },
-  }));
-
   const handler = createHandler({
     operations: [
       operation.get({
@@ -177,10 +144,29 @@ Deno.test("query parameter required", async () => {
           }),
         },
         responses: [response.ok({
+          headers: [],
           description: "",
           content: [body.applicationJson(json.object({}))],
         })],
-        handler: samplePathHandler,
+        // deno-lint-ignore require-await
+        handler: async ({ queryParameters, response }) => {
+          type cases = [
+            Expect<
+              Equal<
+                typeof queryParameters,
+                {
+                  readonly a: string;
+                  readonly b: string;
+                  readonly c: string;
+                  readonly d: string;
+                  readonly e: string | undefined;
+                  readonly enum: "A" | "B" | "C" | undefined;
+                }
+              >
+            >,
+          ];
+          return response["200"]({}, "application/json", {});
+        },
       }),
     ],
   });

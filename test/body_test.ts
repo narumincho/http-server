@@ -1,13 +1,6 @@
 import type { Equal, Expect } from "npm:@type-challenges/utils";
 import { assertEquals } from "jsr:@std/assert";
-import {
-  body,
-  createHandler,
-  json,
-  operation,
-  response,
-  responseHelper,
-} from "../mod.ts";
+import { body, createHandler, json, operation, response } from "../mod.ts";
 
 Deno.test("body", async () => {
   const handler = createHandler({
@@ -26,12 +19,13 @@ Deno.test("body", async () => {
         },
         responses: [
           response.ok({
+            headers: [],
             description: "",
             content: [body.applicationJson(json.object({ a: json.string() }))],
           }),
         ],
         // deno-lint-ignore require-await
-        handler: async ({ body }) => {
+        handler: async ({ body, response }) => {
           type cases = [
             Expect<
               Equal<
@@ -49,7 +43,7 @@ Deno.test("body", async () => {
               >
             >,
           ];
-          return responseHelper.ok("application/json", {
+          return response["200"]({}, "application/json", {
             a: body.content.toString(),
           });
         },
@@ -78,12 +72,13 @@ Deno.test("body empty", async () => {
         path: "/samplePath",
         responses: [
           response.ok({
+            headers: [],
             description: "",
             content: [body.applicationJson(json.object({}))],
           }),
         ],
         // deno-lint-ignore require-await
-        handler: async ({ body }) => {
+        handler: async ({ body, response }) => {
           type cases = [
             Expect<
               Equal<
@@ -92,7 +87,7 @@ Deno.test("body empty", async () => {
               >
             >,
           ];
-          return responseHelper.ok("application/json", body);
+          return response["200"]({}, "application/json", body);
         },
       }),
     ],
@@ -117,12 +112,13 @@ Deno.test("body unexpected Content-Type", async () => {
         },
         responses: [
           response.ok({
+            headers: [],
             description: "",
             content: [body.applicationJson(json.object({}))],
           }),
         ],
         // deno-lint-ignore require-await
-        handler: async ({ body: _body }) => {
+        handler: async ({ body: _body, response }) => {
           type cases = [
             Expect<
               Equal<
@@ -134,7 +130,7 @@ Deno.test("body unexpected Content-Type", async () => {
               >
             >,
           ];
-          return responseHelper.ok("application/json", {});
+          return response["200"]({}, "application/json", {});
         },
       }),
     ],

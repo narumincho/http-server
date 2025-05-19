@@ -7,6 +7,10 @@ import type {
   ResponseTransform,
   TypedResponse,
 } from "./responseHelper.ts";
+import type {
+  AnyResponseHeaderDefinition,
+  ResponseHeaderDefinition,
+} from "./responseHeader.ts";
 
 const supportedHttpMethod = [
   "GET",
@@ -90,18 +94,21 @@ export type CreateHandlerType<
     readonly response: ResponseTransform<Responses[number]> extends
       TypedResponse<
         infer S,
-        infer H,
+        infer H extends ReadonlyArray<AnyResponseHeaderDefinition>,
         infer B
       > ? {
-        [key in S]: (
-          headers: H,
+        readonly [key in S]: (
+          headers: {
+            readonly [HItem in H[number] as HItem["name"]]: HItem extends
+              ResponseHeaderDefinition<infer _, infer T> ? T : never;
+          },
           mimeType: BodyTransform<B>["mimeType"],
           content: BodyTransform<B>["content"],
-        ) => ResponseTransform<Responses[number]>;
+        ) => Promise<Response>;
       }
       : never;
   },
-) => Promise<ResponseTransform<Responses[number]>>;
+) => Promise<Response>;
 
 export type OperationInternal = {
   readonly path: string;
@@ -131,22 +138,13 @@ export type OperationInternal = {
       readonly response: Record<
         string,
         (
-          headers: ReadonlyArray<string>,
+          headers: Record<string, string>,
           mimeType: string,
           content: unknown,
         ) => unknown
       >;
     },
-  ) => Promise<
-    {
-      readonly statusCode: string;
-      readonly content: {
-        readonly mimeType: string;
-        readonly headers: Record<string, unknown>;
-        readonly content: unknown;
-      };
-    }
-  >;
+  ) => Promise<Response>;
   readonly [operationSymbol]: true;
 };
 
@@ -199,16 +197,7 @@ export function createOperation<
           | { readonly mimeType: string; readonly content: unknown }
           | undefined;
       },
-    ) => Promise<
-      {
-        readonly statusCode: string;
-        readonly content: {
-          readonly mimeType: string;
-          readonly headers: Record<string, unknown>;
-          readonly content: unknown;
-        };
-      }
-    >,
+    ) => Promise<Response>,
     [operationSymbol]: true,
   };
 }
