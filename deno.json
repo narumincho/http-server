@@ -1,10 +1,11 @@
 {
   "name": "@narumincho/http-server",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "license": "MIT",
   "compilerOptions": {
     "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true
+    "exactOptionalPropertyTypes": true,
+    "erasableSyntaxOnly": true
   },
   "tasks": {
     "example-start": "deno run --check --watch --allow-net=:8000 ./example.ts"
@@ -12,7 +13,8 @@
   "exports": {
     ".": "./mod.ts",
     "./redoc": "./redoc.ts",
-    "./scalar": "./scalar.ts"
+    "./scalar": "./scalar.ts",
+    "./openApi": "./openApi.ts"
   },
   "imports": {
     "openapi-typescript": "npm:openapi-typescript@^7.6.1"

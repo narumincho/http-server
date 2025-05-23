@@ -17,11 +17,13 @@ import {
   query,
   requestHeader,
   response,
-  responseHelper,
-} from "./mod.ts";
-import { createOpenApi, createOpenApiOperation } from "./openApi.ts";
-import { createRedocOperation } from "./redoc.ts";
-import { createScalarOperation } from "./scalar.ts";
+} from "jsr:@narumincho/http-server";
+import {
+  createOpenApi,
+  createOpenApiOperation,
+} from "jsr:@narumincho/http-server/openApi.ts";
+import { createRedocOperation } from "jsr:@narumincho/http-server/redoc.ts";
+import { createScalarOperation } from "jsr:@narumincho/http-server/scalar.ts";
 
 const operations: Parameters<typeof createHandler>["0"]["operations"] = [
   operation.get({
@@ -50,6 +52,7 @@ const operations: Parameters<typeof createHandler>["0"]["operations"] = [
     responses: [
       response.ok({
         description: "取得結果を返します",
+        headers: [],
         content: [
           body.applicationJson(json.array(json.object({
             name: json.string(),
@@ -59,15 +62,16 @@ const operations: Parameters<typeof createHandler>["0"]["operations"] = [
       }),
     ],
     // deno-lint-ignore require-await
-    handler: async ({ pathParameters, queryParameters }) => {
+    handler: async ({ pathParameters, queryParameters, response }) => {
       console.log(pathParameters, queryParameters);
-      return responseHelper.ok("application/json", [{ name: "" }]);
+      return response["200"]({}, "application/json", [{ name: "" }]);
     },
   }),
   operation.post({
     path: "/items",
     queryParameters: {},
     responses: [response.ok({
+      headers: [],
       description: "結果を返します",
       content: [
         body.applicationJson(json.object({
@@ -76,9 +80,9 @@ const operations: Parameters<typeof createHandler>["0"]["operations"] = [
       ],
     })],
     // deno-lint-ignore require-await
-    handler: async ({ pathParameters, queryParameters }) => {
+    handler: async ({ pathParameters, queryParameters, response }) => {
       console.log(pathParameters, queryParameters);
-      return responseHelper.ok("application/json", { wip: "123" });
+      return response["200"]({}, "application/json", { wip: "123" });
     },
   }),
   operation.get({
@@ -91,6 +95,7 @@ const operations: Parameters<typeof createHandler>["0"]["operations"] = [
       }),
     },
     responses: [response.ok({
+      headers: [],
       description: "結果を返します",
       content: [
         body.applicationJson(json.object({
@@ -99,14 +104,15 @@ const operations: Parameters<typeof createHandler>["0"]["operations"] = [
       ],
     })],
     // deno-lint-ignore require-await
-    handler: async ({ pathParameters, queryParameters }) => {
+    handler: async ({ pathParameters, queryParameters, response }) => {
       console.log(pathParameters, queryParameters);
-      return responseHelper.ok("application/json", { wip: "123" });
+      return response["200"]({}, "application/json", { wip: "123" });
     },
   }),
   operation.patch({
     path: "/items/:id",
     responses: [response.ok({
+      headers: [],
       description: "結果を返します",
       content: [
         body.applicationJson(json.object({
@@ -115,14 +121,15 @@ const operations: Parameters<typeof createHandler>["0"]["operations"] = [
       ],
     })],
     // deno-lint-ignore require-await
-    handler: async ({ pathParameters, queryParameters }) => {
+    handler: async ({ pathParameters, queryParameters, response }) => {
       console.log(pathParameters, queryParameters);
-      return responseHelper.ok("application/json", { wip: "123" });
+      return response["200"]({}, "application/json", { wip: "123" });
     },
   }),
   operation.delete({
     path: "/items/:id",
     responses: [response.ok({
+      headers: [],
       description: "結果を返します",
       content: [
         body.applicationJson(json.object({
@@ -131,25 +138,26 @@ const operations: Parameters<typeof createHandler>["0"]["operations"] = [
       ],
     })],
     // deno-lint-ignore require-await
-    handler: async ({ pathParameters, queryParameters }) => {
+    handler: async ({ pathParameters, queryParameters, response }) => {
       console.log(pathParameters, queryParameters);
-      return responseHelper.ok(
-        "application/json",
-        { wip: "123" },
-      );
+      return response["200"]({}, "application/json", { wip: "123" });
     },
   }),
   createOpenApiOperation({
     path: "/openapi",
     // deno-lint-ignore require-await
-    handler: async () =>
-      createOpenApi({
-        info: {
-          title: "@narumincho/http-server example",
-          version: "0.0.1",
-        },
-        operations,
-      }),
+    handler: async ({ response }) =>
+      response["200"](
+        {},
+        "application/json",
+        createOpenApi({
+          info: {
+            title: "@narumincho/http-server example",
+            version: "0.0.1",
+          },
+          operations,
+        }),
+      ),
   }),
   createRedocOperation({ path: "/redoc", openApiPath: "/openapi" }),
   createScalarOperation({ path: "/scalar", openApiPath: "/openapi" }),
