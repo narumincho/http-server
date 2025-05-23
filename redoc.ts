@@ -13,7 +13,7 @@ export const createRedocOperation = (
   operation.get({
     path,
     responses: [response.ok({
-      description: "Redoc documentation",
+      description: "Documentation by Redoc",
       headers: [],
       content: [body.textHtml({})],
     })],

@@ -13,7 +13,7 @@ export const createScalarOperation = (
   operation.get({
     path,
     responses: [response.ok({
-      description: "Redoc documentation",
+      description: "Documentation by Scalar",
       headers: [],
       content: [body.textHtml({})],
     })],
