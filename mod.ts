@@ -1,5 +1,7 @@
 import { type OperationInternal, supportedHttpMethodSet } from "./operation.ts";
 
+export * from "./pathItem.ts";
+
 export * as json from "./json.ts";
 export * as query from "./query.ts";
 export * as body from "./body.ts";

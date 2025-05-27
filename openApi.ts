@@ -4,17 +4,18 @@ import type {
   OpenAPI3,
   OperationObject,
   ParameterObject,
+  PathItemObject,
+  PathsObject,
   RequestBodyObject,
   ResponseObject,
   SchemaObject,
 } from "openapi-typescript";
 import type { OperationInternal } from "./operation.ts";
 import { body, json, operation, response } from "./mod.ts";
+import { createPathItem, type PathItem } from "./pathItem.ts";
 
-export const createOpenApiOperation = ({ path, handler }: {
-  readonly path: string;
+export const createOpenApiOperation = ({ handler }: {
   readonly handler: operation.CreateHandlerType<
-    string,
     never,
     never,
     never,
@@ -32,28 +33,29 @@ export const createOpenApiOperation = ({ path, handler }: {
       ]
     >
   >;
-}): OperationInternal =>
-  operation.get({
-    path,
-    responses: [response.ok({
-      description: "Open API schema",
-      headers: [],
-      content: [body.applicationJson(json.object({
-        openapi: json.string(),
-      }))],
-    })],
-    handler,
+}): PathItem =>
+  createPathItem({
+    get: operation.createOperation({
+      responses: [response.ok({
+        description: "Open API schema",
+        headers: [],
+        content: [body.applicationJson(json.object({
+          openapi: json.string(),
+        }))],
+      })],
+      handler,
+    }),
   });
 
-export function createOpenApi({ info, operations: paths }: {
+export function createOpenApi({ info, pathItem }: {
   readonly info: InfoObject;
-  readonly operations: ReadonlyArray<OperationInternal>;
+  readonly pathItem: PathItem;
 }): OpenAPI3 {
   return {
     openapi: "3.1.1",
     info,
     paths: Object.fromEntries(
-      [...Map.groupBy(paths, (path) => path.path)].map((
+      [...pathItem].map((
         [path, operations],
       ) => [
         path,
@@ -71,6 +73,43 @@ export function createOpenApi({ info, operations: paths }: {
     ),
   };
 }
+
+const pathItemToOperationObject = (
+  prefix: string,
+  pathItem: PathItem,
+): PathsObject => {
+  // TODO
+  return {
+    ...pathItem.get || pathItem.post || pathItem.put || pathItem.patch ||
+        pathItem.delete || pathItem.options || pathItem.head
+      ? {
+        [prefix ? prefix : "/"]: {
+          ...(pathItem.get ? { get: operationToObject(pathItem.get) } : {}),
+          ...(pathItem.post ? { post: operationToObject(pathItem.post) } : {}),
+          ...(pathItem.put ? { put: operationToObject(pathItem.put) } : {}),
+          ...(pathItem.patch
+            ? { patch: operationToObject(pathItem.patch) }
+            : {}),
+          ...(pathItem.delete
+            ? { delete: operationToObject(pathItem.delete) }
+            : {}),
+          ...(pathItem.options
+            ? { options: operationToObject(pathItem.options) }
+            : {}),
+          ...(pathItem.head ? { head: operationToObject(pathItem.head) } : {}),
+        },
+      }
+      : {},
+    ...Object.entries(pathItem.subPath ?? {}).flatMap((
+      [name, subPathItem],
+    ) => ({
+      [`${prefix}/${name}`]: pathItemToOperationObject(
+        `${prefix}/${name}`,
+        subPathItem,
+      ),
+    })),
+  };
+};
 
 const operationToObject = (operation: OperationInternal): OperationObject => {
   const requestBody: RequestBodyObject | undefined = operation.requestBody
@@ -111,7 +150,6 @@ const operationToObject = (operation: OperationInternal): OperationObject => {
         } as SchemaObject,
       })),
     ],
-
     ...(requestBody ? { requestBody } : {}),
     responses: Object.fromEntries(operation.responses.map(
       (response): [string, ResponseObject] => [response.statusCode, {
