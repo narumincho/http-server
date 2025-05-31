@@ -1,9 +1,9 @@
+import { type HttpMethod, httpMethodFromString } from "./http/method.ts";
+import { type SimpleUrl, urlToSimpleUrl } from "./http/url.ts";
 import type { OperationInternal } from "./operation.ts";
 import {
   getAllowMethods,
   getOperationByHttpMethod,
-  type HttpMethod,
-  httpMethodFromString,
   type PathItem,
 } from "./pathItem.ts";
 
@@ -26,24 +26,28 @@ export const createHandler = (
     const httpMethod = httpMethodFromString(request.method);
     if (!httpMethod) {
       // https://datatracker.ietf.org/doc/html/rfc9110#section-9.1-10
-      return Promise.resolve(new Response(undefined, { status: 501 }));
+      return new Response(undefined, { status: 501 });
     }
 
     return await handleInPathItem({
       prefix: "/",
       pathItem,
       request,
+      simpleUrl: urlToSimpleUrl(new URL(request.url)),
       method: httpMethod,
+      pathVariables: {},
     });
   };
 };
 
 const handleInPathItem = async (
-  { prefix, pathItem, request, method }: {
+  { prefix, pathItem, simpleUrl, request, method, pathVariables }: {
     prefix: string;
     pathItem: PathItem;
     request: Request;
+    simpleUrl: SimpleUrl;
     method: HttpMethod;
+    pathVariables: { readonly [key: string]: string };
   },
 ): Promise<Response> => {
   const path = new URL(request.url).pathname;
@@ -60,8 +64,7 @@ const handleInPathItem = async (
     return handleOperation({
       operation,
       request,
-      // TODO
-      pathPVariables: new Map(),
+      pathVariables,
     });
   }
   for (const [subPath, subPathItem] of Object.entries(pathItem.subPath ?? {})) {
@@ -72,6 +75,7 @@ const handleInPathItem = async (
         pathItem: subPathItem,
         request,
         method,
+        pathVariables,
       });
     }
   }
@@ -93,11 +97,10 @@ type ValueOrError = {
 };
 
 const handleOperation = async (
-  { operation, request }: {
+  { operation, request, pathVariables }: {
     operation: OperationInternal;
     request: Request;
-    // TODO
-    pathPVariables: ReadonlyMap<string, string>;
+    pathVariables: { readonly [key: string]: string };
   },
 ): Promise<Response> => {
   const searchParams = new URL(request.url).searchParams;
@@ -195,7 +198,7 @@ const handleOperation = async (
   }
 
   return await operation.handler({
-    pathParameters: result.pathname.groups as Record<string, never>,
+    pathParameters: pathVariables,
     queryParameters: Object.fromEntries(
       queryParameters.map((e) => {
         if (e.type === "error") {

@@ -85,7 +85,8 @@ export type OperationInternal = {
   readonly responses: ReadonlyArray<AnyResponseDefinition>;
   readonly handler: (
     parameter: {
-      readonly queryParameters: Record<string, unknown>;
+      readonly pathParameters: { readonly [key: string]: string };
+      readonly queryParameters: { readonly [key: string]: unknown };
       readonly headers: Record<string, unknown>;
       readonly body:
         | {
