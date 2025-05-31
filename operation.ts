@@ -12,24 +12,6 @@ import type {
   ResponseHeaderDefinition,
 } from "./responseHeader.ts";
 
-const supportedHttpMethod = [
-  "GET",
-  "POST",
-  "PUT",
-  "DELETE",
-  "PATCH",
-  "HEAD",
-  "OPTIONS",
-  "CONNECT",
-  "TRACE",
-] as const;
-
-type HttpMethod = typeof supportedHttpMethod[number];
-
-export const supportedHttpMethodSet: ReadonlySet<string> = new Set(
-  supportedHttpMethod,
-);
-
 const operationSymbol: unique symbol = Symbol();
 
 type OperationInput<

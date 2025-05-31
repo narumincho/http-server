@@ -10,12 +10,16 @@ import type {
   ResponseObject,
   SchemaObject,
 } from "openapi-typescript";
-import type { OperationInternal } from "./operation.ts";
-import { body, json, operation, response } from "./mod.ts";
+import {
+  type CreateHandlerType,
+  createOperation,
+  type OperationInternal,
+} from "./operation.ts";
+import { body, json, response } from "./mod.ts";
 import { createPathItem, type PathItem } from "./pathItem.ts";
 
-export const createOpenApiOperation = ({ handler }: {
-  readonly handler: operation.CreateHandlerType<
+export const createOpenApiPathItem = ({ handler }: {
+  readonly handler: CreateHandlerType<
     never,
     never,
     never,
@@ -35,7 +39,7 @@ export const createOpenApiOperation = ({ handler }: {
   >;
 }): PathItem =>
   createPathItem({
-    get: operation.createOperation({
+    get: createOperation({
       responses: [response.ok({
         description: "Open API schema",
         headers: [],
@@ -54,61 +58,51 @@ export function createOpenApi({ info, pathItem }: {
   return {
     openapi: "3.1.1",
     info,
-    paths: Object.fromEntries(
-      [...pathItem].map((
-        [path, operations],
-      ) => [
-        path,
-        Object.fromEntries<OperationObject>(
-          operations.map(
-            (
-              operation,
-            ): [string, OperationObject] => [
-              operation.method.toLowerCase(),
-              operationToObject(operation),
-            ],
-          ),
-        ),
-      ]),
-    ),
+    paths: pathItemToOperationObject(pathItem),
   };
 }
 
 const pathItemToOperationObject = (
-  prefix: string,
   pathItem: PathItem,
 ): PathsObject => {
-  // TODO
-  return {
-    ...pathItem.get || pathItem.post || pathItem.put || pathItem.patch ||
-        pathItem.delete || pathItem.options || pathItem.head
-      ? {
-        [prefix ? prefix : "/"]: {
-          ...(pathItem.get ? { get: operationToObject(pathItem.get) } : {}),
-          ...(pathItem.post ? { post: operationToObject(pathItem.post) } : {}),
-          ...(pathItem.put ? { put: operationToObject(pathItem.put) } : {}),
-          ...(pathItem.patch
-            ? { patch: operationToObject(pathItem.patch) }
-            : {}),
-          ...(pathItem.delete
-            ? { delete: operationToObject(pathItem.delete) }
-            : {}),
-          ...(pathItem.options
-            ? { options: operationToObject(pathItem.options) }
-            : {}),
-          ...(pathItem.head ? { head: operationToObject(pathItem.head) } : {}),
-        },
-      }
-      : {},
-    ...Object.entries(pathItem.subPath ?? {}).flatMap((
+  return Object.fromEntries(pathItemToOperationObjectLoop("", pathItem));
+};
+
+const pathItemToOperationObjectLoop = (
+  prefix: string,
+  pathItem: PathItem,
+): ReadonlyArray<readonly [string, PathItemObject]> => {
+  const subPaths: ReadonlyArray<readonly [string, PathItemObject]> = Object
+    .entries(pathItem.subPath ?? {}).flatMap((
       [name, subPathItem],
-    ) => ({
-      [`${prefix}/${name}`]: pathItemToOperationObject(
+    ) => (
+      pathItemToOperationObjectLoop(
         `${prefix}/${name}`,
         subPathItem,
-      ),
-    })),
-  };
+      )
+    ));
+  if (
+    pathItem.get || pathItem.post || pathItem.put || pathItem.patch ||
+    pathItem.delete || pathItem.options || pathItem.head
+  ) {
+    return [
+      [prefix ? prefix : "/", {
+        ...(pathItem.get ? { get: operationToObject(pathItem.get) } : {}),
+        ...(pathItem.post ? { post: operationToObject(pathItem.post) } : {}),
+        ...(pathItem.put ? { put: operationToObject(pathItem.put) } : {}),
+        ...(pathItem.patch ? { patch: operationToObject(pathItem.patch) } : {}),
+        ...(pathItem.delete
+          ? { delete: operationToObject(pathItem.delete) }
+          : {}),
+        ...(pathItem.options
+          ? { options: operationToObject(pathItem.options) }
+          : {}),
+        ...(pathItem.head ? { head: operationToObject(pathItem.head) } : {}),
+      }],
+      ...subPaths,
+    ];
+  }
+  return subPaths;
 };
 
 const operationToObject = (operation: OperationInternal): OperationObject => {

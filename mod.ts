@@ -1,49 +1,84 @@
-import { type OperationInternal, supportedHttpMethodSet } from "./operation.ts";
+import type { OperationInternal } from "./operation.ts";
+import {
+  getAllowMethods,
+  getOperationByHttpMethod,
+  type HttpMethod,
+  httpMethodFromString,
+  type PathItem,
+} from "./pathItem.ts";
 
-export * from "./pathItem.ts";
+export { createPathItem, type PathItem } from "./pathItem.ts";
+export { createOperation, type OperationInternal } from "./operation.ts";
 
 export * as json from "./json.ts";
 export * as query from "./query.ts";
 export * as body from "./body.ts";
-export * as operation from "./operation.ts";
 export * as requestHeader from "./requestHeader.ts";
 export * as response from "./response.ts";
 export * as responseHeader from "./responseHeader.ts";
 
 export const createHandler = (
-  { operations }: {
-    readonly operations: ReadonlyArray<OperationInternal>;
+  { pathItem }: {
+    readonly pathItem: PathItem;
   },
 ): (request: Request) => Promise<Response> => {
   return async (request): Promise<Response> => {
-    const pathsGroupByPath: ReadonlyMap<
-      string,
-      ReadonlyArray<OperationInternal>
-    > = Map
-      .groupBy(operations, (operation) => operation.path);
-    for (const [path, operations] of pathsGroupByPath) {
-      const urlPattern = new URLPattern({ pathname: path });
-      const result = urlPattern.exec(request.url);
-      if (result) {
-        const mathMethodOperation = operations.find((operation) =>
-          operation.method === request.method
-        );
-        if (mathMethodOperation) {
-          return await handleOperation({
-            operation: mathMethodOperation,
-            request,
-            result,
-          });
-        }
-        return new Response(undefined, {
-          status: supportedHttpMethodSet.has(request.method) ? 405 : 501,
-        });
-      }
+    const httpMethod = httpMethodFromString(request.method);
+    if (!httpMethod) {
+      // https://datatracker.ietf.org/doc/html/rfc9110#section-9.1-10
+      return Promise.resolve(new Response(undefined, { status: 501 }));
     }
-    return new Response(undefined, {
-      status: supportedHttpMethodSet.has(request.method) ? 404 : 501,
+
+    return await handleInPathItem({
+      prefix: "/",
+      pathItem,
+      request,
+      method: httpMethod,
     });
   };
+};
+
+const handleInPathItem = async (
+  { prefix, pathItem, request, method }: {
+    prefix: string;
+    pathItem: PathItem;
+    request: Request;
+    method: HttpMethod;
+  },
+): Promise<Response> => {
+  const path = new URL(request.url).pathname;
+  if (path === prefix) {
+    const operation = getOperationByHttpMethod(pathItem, method);
+    if (!operation) {
+      return new Response(undefined, {
+        status: 405,
+        headers: {
+          Allow: Array.from(getAllowMethods(pathItem)).join(", "),
+        },
+      });
+    }
+    return handleOperation({
+      operation,
+      request,
+      // TODO
+      pathPVariables: new Map(),
+    });
+  }
+  for (const [subPath, subPathItem] of Object.entries(pathItem.subPath ?? {})) {
+    const subPrefix = `${prefix}/${subPath}`;
+    if (!path.startsWith(subPrefix)) {
+      return await handleInPathItem({
+        prefix: subPrefix,
+        pathItem: subPathItem,
+        request,
+        method,
+      });
+    }
+  }
+  // TODO pathItem.subPathVariable;
+  // /123 は許可するが, /123/unknown は許可しない
+  // path を ReadonlyArray<string> に変換しておいた方が処理がしやすいか
+  return new Response(undefined, { status: 404 });
 };
 
 type ValueOrError = {
@@ -58,10 +93,11 @@ type ValueOrError = {
 };
 
 const handleOperation = async (
-  { operation, request, result }: {
+  { operation, request }: {
     operation: OperationInternal;
     request: Request;
-    result: URLPatternResult;
+    // TODO
+    pathPVariables: ReadonlyMap<string, string>;
   },
 ): Promise<Response> => {
   const searchParams = new URL(request.url).searchParams;
