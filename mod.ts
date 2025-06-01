@@ -6,6 +6,7 @@ import {
   getOperationByHttpMethod,
   type PathItem,
 } from "./pathItem.ts";
+import { stringArrayEqual, stringArrayStartWith } from "./util.ts";
 
 export { createPathItem, type PathItem } from "./pathItem.ts";
 export { createOperation, type OperationInternal } from "./operation.ts";
@@ -30,7 +31,7 @@ export const createHandler = (
     }
 
     return await handleInPathItem({
-      prefix: "/",
+      prefix: [],
       pathItem,
       request,
       simpleUrl: urlToSimpleUrl(new URL(request.url)),
@@ -42,7 +43,7 @@ export const createHandler = (
 
 const handleInPathItem = async (
   { prefix, pathItem, simpleUrl, request, method, pathVariables }: {
-    prefix: string;
+    prefix: ReadonlyArray<string>;
     pathItem: PathItem;
     request: Request;
     simpleUrl: SimpleUrl;
@@ -50,8 +51,7 @@ const handleInPathItem = async (
     pathVariables: { readonly [key: string]: string };
   },
 ): Promise<Response> => {
-  const path = new URL(request.url).pathname;
-  if (path === prefix) {
+  if (stringArrayEqual(simpleUrl.pathSegments, prefix)) {
     const operation = getOperationByHttpMethod(pathItem, method);
     if (!operation) {
       return new Response(undefined, {
@@ -68,20 +68,35 @@ const handleInPathItem = async (
     });
   }
   for (const [subPath, subPathItem] of Object.entries(pathItem.subPath ?? {})) {
-    const subPrefix = `${prefix}/${subPath}`;
-    if (!path.startsWith(subPrefix)) {
+    const subPrefix = [...prefix, subPath];
+    if (stringArrayStartWith(simpleUrl.pathSegments, subPrefix)) {
       return await handleInPathItem({
         prefix: subPrefix,
         pathItem: subPathItem,
         request,
         method,
         pathVariables,
+        simpleUrl,
       });
     }
   }
-  // TODO pathItem.subPathVariable;
-  // /123 は許可するが, /123/unknown は許可しない
-  // path を ReadonlyArray<string> に変換しておいた方が処理がしやすいか
+  if (pathItem.subPathVariable) {
+    const { variableName, pathItem: subPathItem } = pathItem.subPathVariable;
+    const variableValue = simpleUrl.pathSegments[prefix.length];
+    if (variableValue !== undefined) {
+      return await handleInPathItem({
+        prefix,
+        pathItem: subPathItem,
+        request,
+        method,
+        pathVariables: {
+          ...pathVariables,
+          [variableName]: variableValue,
+        },
+        simpleUrl,
+      });
+    }
+  }
   return new Response(undefined, { status: 404 });
 };
 
