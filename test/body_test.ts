@@ -1,12 +1,19 @@
 import type { Equal, Expect } from "npm:@type-challenges/utils";
 import { assertEquals } from "jsr:@std/assert";
-import { body, createHandler, json, operation, response } from "../mod.ts";
+import {
+  body,
+  createHandler,
+  createOperation,
+  createPathItem,
+  json,
+  response,
+} from "../mod.ts";
+import { operationWithBody } from "../operation.ts";
 
 Deno.test("body", async () => {
   const handler = createHandler({
-    operations: [
-      operation.post({
-        path: "/samplePath",
+    pathItem: createPathItem({
+      post: operationWithBody({
         requestBody: {
           description: "",
           content: [
@@ -48,12 +55,12 @@ Deno.test("body", async () => {
           });
         },
       }),
-    ],
+    }),
   });
 
   assertEquals(
     await (await handler(
-      new Request("https://example.com/samplePath", {
+      new Request("https://example.com/", {
         method: "POST",
         body: "sampleText",
         headers: {
@@ -67,9 +74,8 @@ Deno.test("body", async () => {
 
 Deno.test("body empty", async () => {
   const handler = createHandler({
-    operations: [
-      operation.get({
-        path: "/samplePath",
+    pathItem: createPathItem({
+      get: createOperation({
         responses: [
           response.ok({
             headers: [],
@@ -90,20 +96,19 @@ Deno.test("body empty", async () => {
           return response["200"]({}, "application/json", body);
         },
       }),
-    ],
+    }),
   });
 
   assertEquals(
-    await (await handler(new Request("https://example.com/samplePath"))).text(),
+    await (await handler(new Request("https://example.com/"))).text(),
     "",
   );
 });
 
 Deno.test("body unexpected Content-Type", async () => {
   const handler = createHandler({
-    operations: [
-      operation.post({
-        path: "/samplePath",
+    pathItem: createPathItem({
+      post: createOperation({
         requestBody: {
           description: "",
           content: [
@@ -133,12 +138,12 @@ Deno.test("body unexpected Content-Type", async () => {
           return response["200"]({}, "application/json", {});
         },
       }),
-    ],
+    }),
   });
 
   assertEquals(
     (await handler(
-      new Request("https://example.com/samplePath", {
+      new Request("https://example.com/", {
         method: "POST",
         body: JSON.stringify({ a: "sampleText" }),
         headers: {

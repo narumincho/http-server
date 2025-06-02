@@ -12,8 +12,8 @@ import type {
 } from "openapi-typescript";
 import {
   type CreateHandlerType,
-  createOperation,
   type OperationInternal,
+  operationWithBody,
 } from "./operation.ts";
 import { body, json, response } from "./mod.ts";
 import { createPathItem, type PathItem } from "./pathItem.ts";
@@ -39,7 +39,7 @@ export const createOpenApiPathItem = ({ handler }: {
   >;
 }): PathItem =>
   createPathItem({
-    get: createOperation({
+    get: operationWithBody({
       responses: [response.ok({
         description: "Open API schema",
         headers: [],

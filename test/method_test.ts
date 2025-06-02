@@ -1,11 +1,17 @@
-import { body, createHandler, json, operation, response } from "../mod.ts";
+import {
+  body,
+  createHandler,
+  createOperation,
+  createPathItem,
+  json,
+  response,
+} from "../mod.ts";
 import { assertEquals } from "jsr:@std/assert";
 
 Deno.test("Unrecognized method respond with the 501 status code", async () => {
   const handler = createHandler({
-    operations: [
-      operation.get({
-        path: "/samplePath",
+    pathItem: createPathItem({
+      get: createOperation({
         responses: [response.ok({
           headers: [],
           description: "",
@@ -16,7 +22,7 @@ Deno.test("Unrecognized method respond with the 501 status code", async () => {
           return response["200"]({}, "application/json", {});
         },
       }),
-    ],
+    }),
   });
 
   assertEquals(
@@ -36,9 +42,8 @@ Deno.test("Unrecognized method respond with the 501 status code", async () => {
 
 Deno.test("recognized method respond but not allowed for the target resource respond with 405 status code", async () => {
   const handler = createHandler({
-    operations: [
-      operation.get({
-        path: "/samplePath",
+    pathItem: createPathItem({
+      get: createOperation({
         queryParameters: {},
         responses: [
           response.ok({
@@ -52,12 +57,12 @@ Deno.test("recognized method respond but not allowed for the target resource res
           return response["200"]({}, "application/json", {});
         },
       }),
-    ],
+    }),
   });
 
   assertEquals(
     (await handler(
-      new Request("https://example.com/samplePath", { method: "DELETE" }),
+      new Request("https://example.com/", { method: "DELETE" }),
     )).status,
     405,
   );

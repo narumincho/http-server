@@ -1,16 +1,19 @@
 import { type HttpMethod, supportedHttpMethod } from "./http/method.ts";
-import type { OperationInternal } from "./operation.ts";
+import type {
+  OperationInternalWithBody,
+  OperationInternalWithoutBody,
+} from "./operation.ts";
 
 const pathItemSymbol: unique symbol = Symbol();
 
 export type PathItem = {
-  readonly get: OperationInternal | undefined;
-  readonly post: OperationInternal | undefined;
-  readonly put: OperationInternal | undefined;
-  readonly delete: OperationInternal | undefined;
-  readonly options: OperationInternal | undefined;
-  readonly head: OperationInternal | undefined;
-  readonly patch: OperationInternal | undefined;
+  readonly get: OperationInternalWithoutBody | undefined;
+  readonly post: OperationInternalWithBody | undefined;
+  readonly put: OperationInternalWithBody | undefined;
+  readonly delete: OperationInternalWithoutBody | undefined;
+  readonly options: OperationInternalWithoutBody | undefined;
+  readonly head: OperationInternalWithoutBody | undefined;
+  readonly patch: OperationInternalWithBody | undefined;
   readonly subPath: { readonly [pathSegment: string]: PathItem } | undefined;
   readonly subPathVariable: {
     readonly variableName: string;
@@ -34,13 +37,13 @@ export const createPathItem = (
     subPath,
     subPathVariable,
   }: {
-    readonly get?: OperationInternal | undefined;
-    readonly post?: OperationInternal | undefined;
-    readonly put?: OperationInternal | undefined;
-    readonly delete?: OperationInternal | undefined;
-    readonly options?: OperationInternal | undefined;
-    readonly head?: OperationInternal | undefined;
-    readonly patch?: OperationInternal | undefined;
+    readonly get?: OperationInternalWithoutBody | undefined;
+    readonly post?: OperationInternalWithBody | undefined;
+    readonly put?: OperationInternalWithBody | undefined;
+    readonly delete?: OperationInternalWithoutBody | undefined;
+    readonly options?: OperationInternalWithoutBody | undefined;
+    readonly head?: OperationInternalWithoutBody | undefined;
+    readonly patch?: OperationInternalWithBody | undefined;
     readonly subPath?: { readonly [pathSegment: string]: PathItem } | undefined;
     readonly subPathVariable?: {
       readonly variableName: string;
@@ -65,7 +68,7 @@ export const createPathItem = (
 export const getOperationByHttpMethod = (
   pathItem: PathItem,
   httpMethod: HttpMethod,
-): OperationInternal | undefined => {
+): OperationInternalWithBody | OperationInternalWithoutBody | undefined => {
   switch (httpMethod) {
     case "GET":
       return pathItem.get;

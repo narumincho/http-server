@@ -1,6 +1,9 @@
 import { type HttpMethod, httpMethodFromString } from "./http/method.ts";
 import { type SimpleUrl, urlToSimpleUrl } from "./http/url.ts";
-import type { OperationInternal } from "./operation.ts";
+import type {
+  OperationInternalWithBody,
+  OperationInternalWithoutBody,
+} from "./operation.ts";
 import {
   getAllowMethods,
   getOperationByHttpMethod,
@@ -9,7 +12,10 @@ import {
 import { stringArrayEqual, stringArrayStartWith } from "./util.ts";
 
 export { createPathItem, type PathItem } from "./pathItem.ts";
-export { createOperation, type OperationInternal } from "./operation.ts";
+export {
+  type OperationInternalWithBody,
+  operationWithBody as createOperation,
+} from "./operation.ts";
 
 export * as json from "./json.ts";
 export * as query from "./query.ts";
@@ -113,7 +119,7 @@ type ValueOrError = {
 
 const handleOperation = async (
   { operation, request, pathVariables }: {
-    operation: OperationInternal;
+    operation: OperationInternalWithBody | OperationInternalWithoutBody;
     request: Request;
     pathVariables: { readonly [key: string]: string };
   },
@@ -177,7 +183,8 @@ const handleOperation = async (
   }
 
   const contentType = request.headers.get("content-type");
-  const needBody = operation.requestBody !== undefined &&
+  const needBody = "requestBody" in operation &&
+    operation.requestBody !== undefined &&
     operation.requestBody.content.length > 0;
   if (
     needBody && request.body === null
@@ -194,7 +201,8 @@ const handleOperation = async (
       },
     );
   }
-  const matchedRequestBodyDefinition = contentType
+  const matchedRequestBodyDefinition = contentType &&
+      "requestBody" in operation
     ? operation.requestBody?.content.find((e) => e.mimeType === contentType)
     : undefined;
 
