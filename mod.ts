@@ -1,5 +1,5 @@
 import { type HttpMethod, httpMethodFromString } from "./http/method.ts";
-import { type SimpleUrl, urlToSimpleUrl } from "./http/url.ts";
+import { urlToSimpleUrl } from "./http/url.ts";
 import type {
   OperationInternalWithBody,
   OperationInternalWithoutBody,
@@ -9,7 +9,6 @@ import {
   getOperationByHttpMethod,
   type PathItem,
 } from "./pathItem.ts";
-import { stringArrayEqual, stringArrayStartWith } from "./util.ts";
 
 export { createPathItem, type PathItem } from "./pathItem.ts";
 export * from "./operation.ts";
@@ -23,7 +22,7 @@ export * as responseHeader from "./responseHeader.ts";
 
 export const createHandler = (
   { pathItem }: {
-    readonly pathItem: PathItem;
+    readonly pathItem: PathItem<Record<never, never>>;
   },
 ): (request: Request) => Promise<Response> => {
   return async (request): Promise<Response> => {
@@ -34,27 +33,26 @@ export const createHandler = (
     }
 
     return await handleInPathItem({
-      prefix: [],
       pathItem,
       request,
-      simpleUrl: urlToSimpleUrl(new URL(request.url)),
+      pathRest: urlToSimpleUrl(new URL(request.url)).pathSegments,
       method: httpMethod,
       pathVariables: {},
     });
   };
 };
 
-const handleInPathItem = async (
-  { prefix, pathItem, simpleUrl, request, method, pathVariables }: {
-    prefix: ReadonlyArray<string>;
-    pathItem: PathItem;
+const handleInPathItem = async <PathVariables extends Record<string, unknown>>(
+  { pathItem, pathRest, request, method, pathVariables }: {
+    pathItem: PathItem<PathVariables>;
     request: Request;
-    simpleUrl: SimpleUrl;
+    pathRest: ReadonlyArray<string>;
     method: HttpMethod;
-    pathVariables: { readonly [key: string]: string };
+    pathVariables: PathVariables;
   },
 ): Promise<Response> => {
-  if (stringArrayEqual(simpleUrl.pathSegments, prefix)) {
+  const [name, ...rest] = pathRest;
+  if (name === undefined) {
     const operation = getOperationByHttpMethod(pathItem, method);
     if (!operation) {
       return new Response(undefined, {
@@ -70,35 +68,28 @@ const handleInPathItem = async (
       pathVariables,
     });
   }
-  for (const [subPath, subPathItem] of Object.entries(pathItem.subPath ?? {})) {
-    const subPrefix = [...prefix, subPath];
-    if (stringArrayStartWith(simpleUrl.pathSegments, subPrefix)) {
+  for (const [subName, subPathItem] of Object.entries(pathItem.subPath ?? {})) {
+    if (subName === name) {
       return await handleInPathItem({
-        prefix: subPrefix,
         pathItem: subPathItem,
         request,
         method,
         pathVariables,
-        simpleUrl,
+        pathRest: rest,
       });
     }
   }
   if (pathItem.subPathVariable) {
-    const { variableName, pathItem: subPathItem } = pathItem.subPathVariable;
-    const variableValue = simpleUrl.pathSegments[prefix.length];
-    if (variableValue !== undefined) {
-      return await handleInPathItem({
-        prefix,
-        pathItem: subPathItem,
-        request,
-        method,
-        pathVariables: {
-          ...pathVariables,
-          [variableName]: variableValue,
-        },
-        simpleUrl,
-      });
-    }
+    return await handleInPathItem({
+      pathItem: pathItem.subPathVariable.pathItem,
+      request,
+      method,
+      pathVariables: {
+        ...pathVariables,
+        [pathItem.subPathVariable.variableName]: name,
+      },
+      pathRest: rest,
+    });
   }
   return new Response(undefined, { status: 404 });
 };
@@ -114,11 +105,13 @@ type ValueOrError = {
   readonly message: string;
 };
 
-const handleOperation = async (
+const handleOperation = async <PathVariables extends Record<string, unknown>>(
   { operation, request, pathVariables }: {
-    operation: OperationInternalWithBody | OperationInternalWithoutBody;
+    operation:
+      | OperationInternalWithBody<PathVariables>
+      | OperationInternalWithoutBody<PathVariables>;
     request: Request;
-    pathVariables: { readonly [key: string]: string };
+    pathVariables: PathVariables;
   },
 ): Promise<Response> => {
   const searchParams = new URL(request.url).searchParams;

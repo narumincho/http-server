@@ -6,26 +6,52 @@ import type {
 
 const pathItemSymbol: unique symbol = Symbol();
 
-export type PathItem = {
-  readonly get: OperationInternalWithoutBody | undefined;
-  readonly post: OperationInternalWithBody | undefined;
-  readonly put: OperationInternalWithBody | undefined;
-  readonly delete: OperationInternalWithoutBody | undefined;
-  readonly options: OperationInternalWithoutBody | undefined;
-  readonly head: OperationInternalWithoutBody | undefined;
-  readonly patch: OperationInternalWithBody | undefined;
-  readonly subPath: { readonly [pathSegment: string]: PathItem } | undefined;
-  readonly subPathVariable: {
-    readonly variableName: string;
-    readonly pathItem: PathItem;
-  } | undefined;
+export type PathItem<PathVariables extends Record<string, unknown>> = {
+  readonly get:
+    | OperationInternalWithoutBody<NoInfer<PathVariables>>
+    | undefined;
+  readonly post: OperationInternalWithBody<NoInfer<PathVariables>> | undefined;
+  readonly put: OperationInternalWithBody<NoInfer<PathVariables>> | undefined;
+  readonly delete:
+    | OperationInternalWithoutBody<NoInfer<PathVariables>>
+    | undefined;
+  readonly options:
+    | OperationInternalWithoutBody<NoInfer<PathVariables>>
+    | undefined;
+  readonly head:
+    | OperationInternalWithoutBody<NoInfer<PathVariables>>
+    | undefined;
+  readonly patch: OperationInternalWithBody<NoInfer<PathVariables>> | undefined;
+  readonly subPath:
+    | { readonly [pathSegment: string]: PathItem<PathVariables> }
+    | undefined;
+  readonly subPathVariable: SubPathVariable<PathVariables, string> | undefined;
   readonly [pathItemSymbol]: true;
+};
+
+export type SubPathVariable<
+  PathVariables extends Record<string, unknown>,
+  VariableName extends string,
+> = {
+  readonly variableName: VariableName;
+  readonly pathItem: PathItem<
+    ObjectAddVariable<PathVariables, VariableName>
+  >;
+};
+
+export type ObjectAddVariable<A, VariableName extends string> = {
+  [k in keyof A | VariableName]: k extends keyof A ? A[k]
+    : k extends VariableName ? string
+    : never;
 };
 
 /**
  * 直下で1つあるみたいな
  */
-export const createPathItem = (
+export const createPathItem = <
+  const PathVariables extends Record<string, unknown>,
+  const variableName extends string,
+>(
   {
     get,
     post,
@@ -37,20 +63,35 @@ export const createPathItem = (
     subPath,
     subPathVariable,
   }: {
-    readonly get?: OperationInternalWithoutBody | undefined;
-    readonly post?: OperationInternalWithBody | undefined;
-    readonly put?: OperationInternalWithBody | undefined;
-    readonly delete?: OperationInternalWithoutBody | undefined;
-    readonly options?: OperationInternalWithoutBody | undefined;
-    readonly head?: OperationInternalWithoutBody | undefined;
-    readonly patch?: OperationInternalWithBody | undefined;
-    readonly subPath?: { readonly [pathSegment: string]: PathItem } | undefined;
-    readonly subPathVariable?: {
-      readonly variableName: string;
-      readonly pathItem: PathItem;
+    readonly get?:
+      | OperationInternalWithoutBody<NoInfer<PathVariables>>
+      | undefined;
+    readonly post?:
+      | OperationInternalWithBody<NoInfer<PathVariables>>
+      | undefined;
+    readonly put?:
+      | OperationInternalWithBody<NoInfer<PathVariables>>
+      | undefined;
+    readonly delete?:
+      | OperationInternalWithoutBody<NoInfer<PathVariables>>
+      | undefined;
+    readonly options?:
+      | OperationInternalWithoutBody<NoInfer<PathVariables>>
+      | undefined;
+    readonly head?:
+      | OperationInternalWithoutBody<NoInfer<PathVariables>>
+      | undefined;
+    readonly patch?:
+      | OperationInternalWithBody<NoInfer<PathVariables>>
+      | undefined;
+    readonly subPath?: {
+      readonly [pathSegment: string]: PathItem<NoInfer<PathVariables>>;
     } | undefined;
+    readonly subPathVariable?:
+      | SubPathVariable<NoInfer<PathVariables>, variableName>
+      | undefined;
   },
-): PathItem => {
+): PathItem<PathVariables> => {
   return {
     get,
     post,
@@ -65,10 +106,15 @@ export const createPathItem = (
   };
 };
 
-export const getOperationByHttpMethod = (
-  pathItem: PathItem,
+export const getOperationByHttpMethod = <
+  PathVariables extends Record<string, unknown>,
+>(
+  pathItem: PathItem<PathVariables>,
   httpMethod: HttpMethod,
-): OperationInternalWithBody | OperationInternalWithoutBody | undefined => {
+):
+  | OperationInternalWithBody<NoInfer<PathVariables>>
+  | OperationInternalWithoutBody<NoInfer<PathVariables>>
+  | undefined => {
   switch (httpMethod) {
     case "GET":
       return pathItem.get;
@@ -90,8 +136,8 @@ export const getOperationByHttpMethod = (
   }
 };
 
-export const getAllowMethods = (
-  pathItem: PathItem,
+export const getAllowMethods = <PathVariables extends Record<string, unknown>>(
+  pathItem: PathItem<PathVariables>,
 ): ReadonlyArray<HttpMethod> => {
   return supportedHttpMethod.filter((method) =>
     getOperationByHttpMethod(pathItem, method)

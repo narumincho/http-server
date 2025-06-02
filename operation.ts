@@ -19,6 +19,7 @@ export type OperationInput<
   RequestHeaders extends ReadonlyArray<AnyRequestHeaderDefinition>,
   RequestBodyContent extends ReadonlyArray<AnyBodyDefinition>,
   Responses extends ReadonlyArray<AnyResponseDefinition>,
+  PathVariables extends Record<string, unknown>,
 > = {
   readonly description?: string | undefined;
   readonly queryParameters?: QueryParameters | undefined;
@@ -32,7 +33,8 @@ export type OperationInput<
     NoInfer<QueryParameters>,
     NoInfer<RequestHeaders>,
     NoInfer<RequestBodyContent>,
-    NoInfer<Responses>
+    NoInfer<Responses>,
+    NoInfer<PathVariables>
   >;
 };
 
@@ -41,8 +43,10 @@ export type CreateHandlerType<
   RequestHeaders extends ReadonlyArray<AnyRequestHeaderDefinition>,
   RequestBodyContent extends ReadonlyArray<AnyBodyDefinition>,
   Responses extends ReadonlyArray<AnyResponseDefinition>,
+  PathVariables extends Record<string, unknown> = never,
 > = (
   request: {
+    readonly pathParameters: PathVariables;
     readonly queryParameters: {
       [k in keyof QueryParameters]: QueryParameters[k]["example"];
     };
@@ -71,7 +75,9 @@ export type CreateHandlerType<
   },
 ) => Promise<Response>;
 
-export type OperationInternalWithBody = {
+export type OperationInternalWithBody<
+  PathVariables extends Record<string, unknown>,
+> = {
   readonly description: string | undefined;
   readonly queryParameters: {
     readonly [key: string]: QueryDefinition<unknown>;
@@ -84,7 +90,7 @@ export type OperationInternalWithBody = {
   readonly responses: ReadonlyArray<AnyResponseDefinition>;
   readonly handler: (
     parameter: {
-      readonly pathParameters: { readonly [key: string]: string };
+      readonly pathParameters: PathVariables;
       readonly queryParameters: { readonly [key: string]: unknown };
       readonly headers: Record<string, unknown>;
       readonly body:
@@ -113,6 +119,7 @@ export const operationWithBody = <
     never,
   const RequestBodyContent extends ReadonlyArray<AnyBodyDefinition> = never,
   const Responses extends ReadonlyArray<AnyResponseDefinition> = never,
+  const PathVariables extends Record<string, unknown> = never,
 >(
   {
     description,
@@ -125,9 +132,10 @@ export const operationWithBody = <
     QueryParameters,
     RequestHeaders,
     RequestBodyContent,
-    Responses
+    Responses,
+    PathVariables
   >,
-): OperationInternalWithBody => ({
+): OperationInternalWithBody<PathVariables> => ({
   description,
   queryParameters: Object.fromEntries(
     Object.entries(queryParameters ?? {}).map(
@@ -151,7 +159,9 @@ export const operationWithBody = <
   [operationSymbol]: true,
 });
 
-export type OperationInternalWithoutBody = {
+export type OperationInternalWithoutBody<
+  PathVariables extends Record<string, unknown>,
+> = {
   readonly description: string | undefined;
   readonly queryParameters: {
     readonly [key: string]: QueryDefinition<unknown>;
@@ -160,7 +170,7 @@ export type OperationInternalWithoutBody = {
   readonly responses: ReadonlyArray<AnyResponseDefinition>;
   readonly handler: (
     parameter: {
-      readonly pathParameters: { readonly [key: string]: string };
+      readonly pathParameters: PathVariables;
       readonly queryParameters: { readonly [key: string]: unknown };
       readonly headers: Record<string, unknown>;
       readonly body:
@@ -183,6 +193,7 @@ export type OperationInternalWithoutBody = {
 };
 
 export const operationWithoutBody = <
+  PathVariables extends Record<string, unknown>,
   const QueryParameters extends Record<string, QueryDefinition<unknown>> =
     never,
   const RequestHeaders extends ReadonlyArray<AnyRequestHeaderDefinition> =
@@ -200,11 +211,12 @@ export const operationWithoutBody = <
       QueryParameters,
       RequestHeaders,
       [],
-      Responses
+      Responses,
+      PathVariables
     >,
     "requestBody"
   >,
-): OperationInternalWithoutBody => ({
+): OperationInternalWithoutBody<PathVariables> => ({
   description,
   queryParameters: Object.fromEntries(
     Object.entries(queryParameters ?? {}).map(
