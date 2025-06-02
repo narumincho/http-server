@@ -12,8 +12,10 @@ import type {
 } from "openapi-typescript";
 import {
   type CreateHandlerType,
-  type OperationInternal,
+  type OperationInternalWithBody,
+  type OperationInternalWithoutBody,
   operationWithBody,
+  operationWithoutBody,
 } from "./operation.ts";
 import { body, json, response } from "./mod.ts";
 import { createPathItem, type PathItem } from "./pathItem.ts";
@@ -39,7 +41,7 @@ export const createOpenApiPathItem = ({ handler }: {
   >;
 }): PathItem =>
   createPathItem({
-    get: operationWithBody({
+    get: operationWithoutBody({
       responses: [response.ok({
         description: "Open API schema",
         headers: [],
@@ -105,20 +107,23 @@ const pathItemToOperationObjectLoop = (
   return subPaths;
 };
 
-const operationToObject = (operation: OperationInternal): OperationObject => {
-  const requestBody: RequestBodyObject | undefined = operation.requestBody
-    ? {
-      description: operation.requestBody.description,
-      content: Object.fromEntries<MediaTypeObject>(
-        operation.requestBody.content.map(
-          (body): [string, MediaTypeObject] => [
-            body.mimeType,
-            body.jsonSchema,
-          ],
+const operationToObject = (
+  operation: OperationInternalWithBody | OperationInternalWithoutBody,
+): OperationObject => {
+  const requestBody: RequestBodyObject | undefined =
+    "requestBody" in operation && operation.requestBody
+      ? {
+        description: operation.requestBody.description,
+        content: Object.fromEntries<MediaTypeObject>(
+          operation.requestBody.content.map(
+            (body): [string, MediaTypeObject] => [
+              body.mimeType,
+              body.jsonSchema,
+            ],
+          ),
         ),
-      ),
-    }
-    : undefined;
+      }
+      : undefined;
 
   return {
     ...(operation.description ? { description: operation.description } : {}),

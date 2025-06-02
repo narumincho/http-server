@@ -3,9 +3,9 @@ import { assertSpyCall, spy } from "jsr:@std/testing/mock";
 import {
   body,
   createHandler,
-  createOperation,
   createPathItem,
   json,
+  operationWithoutBody,
   response,
 } from "../mod.ts";
 import { query } from "../mod.ts";
@@ -15,7 +15,7 @@ Deno.test("query parameter", async () => {
   const func = spy((_headers: unknown): void => {});
   const handler = createHandler({
     pathItem: createPathItem({
-      get: createOperation({
+      get: operationWithoutBody({
         queryParameters: {
           key: query.required({
             description: "",
@@ -81,7 +81,7 @@ Deno.test("query parameter", async () => {
 Deno.test("query parameter empty", async () => {
   const handler = createHandler({
     pathItem: createPathItem({
-      get: createOperation({
+      get: operationWithoutBody({
         responses: [response.ok({
           headers: [],
           description: "",
@@ -114,7 +114,7 @@ Deno.test("query parameter empty", async () => {
 Deno.test("query parameter required", async () => {
   const handler = createHandler({
     pathItem: createPathItem({
-      get: createOperation({
+      get: operationWithoutBody({
         queryParameters: {
           a: query.required({
             description: "",

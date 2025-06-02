@@ -2,8 +2,8 @@ import { assertEquals } from "jsr:@std/assert";
 import {
   body,
   createHandler,
-  createOperation,
   createPathItem,
+  operationWithoutBody,
   response,
   responseHeader,
 } from "../mod.ts";
@@ -13,7 +13,7 @@ Deno.test("responseHeader: required and optional types", async () => {
     pathItem: createPathItem({
       subPath: {
         "test-basic-headers": createPathItem({
-          get: createOperation({
+          get: operationWithoutBody({
             responses: [
               response.ok({
                 description: "Response with various header types",

@@ -4,9 +4,9 @@ import { assertEquals } from "jsr:@std/assert";
 import {
   body,
   createHandler,
-  createOperation,
   createPathItem,
   json,
+  operationWithoutBody,
   requestHeader,
   response,
 } from "../mod.ts";
@@ -16,7 +16,7 @@ Deno.test("requestHeader optional", async () => {
   const func = spy((_headers: unknown): void => {});
   const handler = createHandler({
     pathItem: createPathItem({
-      get: createOperation({
+      get: operationWithoutBody({
         requestHeaders: [
           requestHeader.optional(
             requestHeader.authorizationBearer({}),
@@ -84,7 +84,7 @@ Deno.test("requestHeader optional", async () => {
 Deno.test("requestHeader required", async () => {
   const handler = createHandler({
     pathItem: createPathItem({
-      get: createOperation({
+      get: operationWithoutBody({
         requestHeaders: [
           requestHeader.required(requestHeader.authorizationBearer({}), {}),
         ],

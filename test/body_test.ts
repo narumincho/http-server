@@ -3,12 +3,12 @@ import { assertEquals } from "jsr:@std/assert";
 import {
   body,
   createHandler,
-  createOperation,
   createPathItem,
   json,
+  operationWithBody,
+  operationWithoutBody,
   response,
 } from "../mod.ts";
-import { operationWithBody } from "../operation.ts";
 
 Deno.test("body", async () => {
   const handler = createHandler({
@@ -75,7 +75,7 @@ Deno.test("body", async () => {
 Deno.test("body empty", async () => {
   const handler = createHandler({
     pathItem: createPathItem({
-      get: createOperation({
+      get: operationWithoutBody({
         responses: [
           response.ok({
             headers: [],
@@ -108,7 +108,7 @@ Deno.test("body empty", async () => {
 Deno.test("body unexpected Content-Type", async () => {
   const handler = createHandler({
     pathItem: createPathItem({
-      post: createOperation({
+      post: operationWithBody({
         requestBody: {
           description: "",
           content: [

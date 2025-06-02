@@ -12,10 +12,7 @@ import {
 import { stringArrayEqual, stringArrayStartWith } from "./util.ts";
 
 export { createPathItem, type PathItem } from "./pathItem.ts";
-export {
-  type OperationInternalWithBody,
-  operationWithBody as createOperation,
-} from "./operation.ts";
+export * from "./operation.ts";
 
 export * as json from "./json.ts";
 export * as query from "./query.ts";

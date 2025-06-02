@@ -1,28 +1,27 @@
-import { body, operation, response } from "./mod.ts";
-import type { OperationInternal } from "./operation.ts";
+import { body, operationWithoutBody, type PathItem, response } from "./mod.ts";
+import { createPathItem } from "./pathItem.ts";
 
 /**
  * https://github.com/Redocly/redoc
  */
 export const createRedocOperation = (
-  { path, openApiPath }: {
-    readonly path: string;
+  { openApiPath }: {
     readonly openApiPath: string;
   },
-): OperationInternal =>
-  operation.get({
-    path,
-    responses: [response.ok({
-      description: "Documentation by Redoc",
-      headers: [],
-      content: [body.textHtml({})],
-    })],
-    // deno-lint-ignore require-await
-    handler: async ({ response }) => {
-      return response["200"](
-        {},
-        "text/html",
-        `<!doctype html>
+): PathItem =>
+  createPathItem({
+    get: operationWithoutBody({
+      responses: [response.ok({
+        description: "Documentation by Redoc",
+        headers: [],
+        content: [body.textHtml({})],
+      })],
+      // deno-lint-ignore require-await
+      handler: async ({ response }) => {
+        return response["200"](
+          {},
+          "text/html",
+          `<!doctype html>
 <html>
 <head></head>
 <body>
@@ -30,6 +29,7 @@ export const createRedocOperation = (
   <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
 </body>
 </html>`,
-      );
-    },
+        );
+      },
+    }),
   });

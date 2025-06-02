@@ -1,9 +1,10 @@
 import {
   body,
   createHandler,
-  createOperation,
   createPathItem,
   json,
+  operationWithBody,
+  operationWithoutBody,
   query,
   requestHeader,
   response,
@@ -15,7 +16,7 @@ import { createScalarOperation } from "./scalar.ts";
 const pathItem = createPathItem({
   subPath: {
     "items": createPathItem({
-      get: createOperation({
+      get: operationWithoutBody({
         description: "アイテムを一覧で取得します",
         queryParameters: {
           filter: query.optional({
@@ -55,8 +56,9 @@ const pathItem = createPathItem({
           return response["200"]({}, "application/json", [{ name: "" }]);
         },
       }),
-      post: createOperation({
+      post: operationWithBody({
         queryParameters: {},
+        requestBody: { description: "", content: [] },
         responses: [response.ok({
           headers: [],
           description: "結果を返します",
@@ -75,7 +77,7 @@ const pathItem = createPathItem({
       subPathVariable: {
         variableName: "id",
         pathItem: createPathItem({
-          get: createOperation({
+          get: operationWithoutBody({
             queryParameters: {
               withDetail: query.optional({
                 description: "詳細情報も取得するかどうか",
@@ -116,14 +118,13 @@ const pathItem = createPathItem({
           }),
         ),
     }),
-    "redoc": createRedocOperation({ path: "/redoc", openApiPath: "/openApi" }),
+    "redoc": createRedocOperation({ openApiPath: "/openApi" }),
     "scalar": createScalarOperation({
-      path: "/scalar",
       openApiPath: "/openapi",
     }),
   },
 });
 
 Deno.serve(
-  createHandler({}),
+  createHandler({ pathItem }),
 );

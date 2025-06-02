@@ -14,7 +14,7 @@ import type {
 
 const operationSymbol: unique symbol = Symbol();
 
-type OperationInput<
+export type OperationInput<
   QueryParameters extends Record<string, QueryDefinition<unknown>>,
   RequestHeaders extends ReadonlyArray<AnyRequestHeaderDefinition>,
   RequestBodyContent extends ReadonlyArray<AnyBodyDefinition>,
@@ -23,7 +23,7 @@ type OperationInput<
   readonly description?: string | undefined;
   readonly queryParameters?: QueryParameters | undefined;
   readonly requestHeaders?: RequestHeaders | undefined;
-  readonly requestBody?: {
+  readonly requestBody: {
     readonly description: string;
     readonly content: RequestBodyContent;
   } | undefined;
@@ -106,7 +106,7 @@ export type OperationInternalWithBody = {
   readonly [operationSymbol]: true;
 };
 
-export function operationWithBody<
+export const operationWithBody = <
   const QueryParameters extends Record<string, QueryDefinition<unknown>> =
     never,
   const RequestHeaders extends ReadonlyArray<AnyRequestHeaderDefinition> =
@@ -127,31 +127,29 @@ export function operationWithBody<
     RequestBodyContent,
     Responses
   >,
-): OperationInternalWithBody {
-  return {
-    description,
-    queryParameters: Object.fromEntries(
-      Object.entries(queryParameters ?? {}).map(
-        ([name, queryParameter]) => [
-          name,
-          queryParameter,
-        ],
-      ),
+): OperationInternalWithBody => ({
+  description,
+  queryParameters: Object.fromEntries(
+    Object.entries(queryParameters ?? {}).map(
+      ([name, queryParameter]) => [
+        name,
+        queryParameter,
+      ],
     ),
-    requestHeaders: requestHeaders ?? [],
-    requestBody: requestBody,
-    responses,
-    handler: handler as unknown as (
-      request: {
-        readonly queryParameters: Record<string, unknown>;
-        readonly body:
-          | { readonly mimeType: string; readonly content: unknown }
-          | undefined;
-      },
-    ) => Promise<Response>,
-    [operationSymbol]: true,
-  };
-}
+  ),
+  requestHeaders: requestHeaders ?? [],
+  requestBody: requestBody,
+  responses,
+  handler: handler as unknown as (
+    request: {
+      readonly queryParameters: Record<string, unknown>;
+      readonly body:
+        | { readonly mimeType: string; readonly content: unknown }
+        | undefined;
+    },
+  ) => Promise<Response>,
+  [operationSymbol]: true,
+});
 
 export type OperationInternalWithoutBody = {
   readonly description: string | undefined;
@@ -184,7 +182,7 @@ export type OperationInternalWithoutBody = {
   readonly [operationSymbol]: true;
 };
 
-export function operationWithoutBody<
+export const operationWithoutBody = <
   const QueryParameters extends Record<string, QueryDefinition<unknown>> =
     never,
   const RequestHeaders extends ReadonlyArray<AnyRequestHeaderDefinition> =
@@ -197,33 +195,34 @@ export function operationWithoutBody<
     requestHeaders,
     responses,
     handler,
-  }: OperationInput<
-    QueryParameters,
-    RequestHeaders,
-    [],
-    Responses
+  }: Omit<
+    OperationInput<
+      QueryParameters,
+      RequestHeaders,
+      [],
+      Responses
+    >,
+    "requestBody"
   >,
-): OperationInternalWithoutBody {
-  return {
-    description,
-    queryParameters: Object.fromEntries(
-      Object.entries(queryParameters ?? {}).map(
-        ([name, queryParameter]) => [
-          name,
-          queryParameter,
-        ],
-      ),
+): OperationInternalWithoutBody => ({
+  description,
+  queryParameters: Object.fromEntries(
+    Object.entries(queryParameters ?? {}).map(
+      ([name, queryParameter]) => [
+        name,
+        queryParameter,
+      ],
     ),
-    requestHeaders: requestHeaders ?? [],
-    responses,
-    handler: handler as unknown as (
-      request: {
-        readonly queryParameters: Record<string, unknown>;
-        readonly body:
-          | { readonly mimeType: string; readonly content: unknown }
-          | undefined;
-      },
-    ) => Promise<Response>,
-    [operationSymbol]: true,
-  };
-}
+  ),
+  requestHeaders: requestHeaders ?? [],
+  responses,
+  handler: handler as unknown as (
+    request: {
+      readonly queryParameters: Record<string, unknown>;
+      readonly body:
+        | { readonly mimeType: string; readonly content: unknown }
+        | undefined;
+    },
+  ) => Promise<Response>,
+  [operationSymbol]: true,
+});
