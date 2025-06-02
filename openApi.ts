@@ -14,7 +14,6 @@ import {
   type CreateHandlerType,
   type OperationInternalWithBody,
   type OperationInternalWithoutBody,
-  operationWithBody,
   operationWithoutBody,
 } from "./operation.ts";
 import { body, json, response } from "./mod.ts";
