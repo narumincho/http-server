@@ -4,8 +4,9 @@ import { assertEquals } from "jsr:@std/assert";
 import {
   body,
   createHandler,
+  createPathItem,
   json,
-  operation,
+  operationWithoutBody,
   requestHeader,
   response,
 } from "../mod.ts";
@@ -14,9 +15,8 @@ import type { Equal, Expect } from "npm:@type-challenges/utils";
 Deno.test("requestHeader optional", async () => {
   const func = spy((_headers: unknown): void => {});
   const handler = createHandler({
-    operations: [
-      operation.get({
-        path: "/samplePath",
+    pathItem: createPathItem({
+      get: operationWithoutBody({
         requestHeaders: [
           requestHeader.optional(
             requestHeader.authorizationBearer({}),
@@ -44,11 +44,11 @@ Deno.test("requestHeader optional", async () => {
           return response["200"]([], "text/plain", "");
         },
       }),
-    ],
+    }),
   });
 
   await handler(
-    new Request("https://example.com/samplePath", {
+    new Request("https://example.com/", {
       headers: {
         Authorization: "Bearer sampleToken",
       },
@@ -56,7 +56,7 @@ Deno.test("requestHeader optional", async () => {
   );
 
   await handler(
-    new Request("https://example.com/samplePath", {
+    new Request("https://example.com/", {
       headers: {},
     }),
   );
@@ -65,7 +65,7 @@ Deno.test("requestHeader optional", async () => {
   assertSpyCall(func, 1, { args: [{ Authorization: undefined }] });
 
   const errorResponse = await handler(
-    new Request("https://example.com/samplePath", {
+    new Request("https://example.com/", {
       headers: { Authorization: "invalidText" },
     }),
   );
@@ -83,9 +83,8 @@ Deno.test("requestHeader optional", async () => {
 
 Deno.test("requestHeader required", async () => {
   const handler = createHandler({
-    operations: [
-      operation.get({
-        path: "/samplePath",
+    pathItem: createPathItem({
+      get: operationWithoutBody({
         requestHeaders: [
           requestHeader.required(requestHeader.authorizationBearer({}), {}),
         ],
@@ -109,11 +108,11 @@ Deno.test("requestHeader required", async () => {
           return response["200"]([], "application/json", headers);
         },
       }),
-    ],
+    }),
   });
 
   const errorResponse = await handler(
-    new Request("https://example.com/samplePath", {
+    new Request("https://example.com/", {
       headers: {},
     }),
   );
@@ -130,7 +129,7 @@ Deno.test("requestHeader required", async () => {
 
   assertEquals(
     await (await handler(
-      new Request("https://example.com/samplePath", {
+      new Request("https://example.com/", {
         headers: {
           Authorization: "Bearer sampleToken",
         },

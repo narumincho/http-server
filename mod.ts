@@ -1,47 +1,106 @@
-import { type OperationInternal, supportedHttpMethodSet } from "./operation.ts";
+import { type HttpMethod, httpMethodFromString } from "./http/method.ts";
+import { type SimpleUrl, urlToSimpleUrl } from "./http/url.ts";
+import type {
+  OperationInternalWithBody,
+  OperationInternalWithoutBody,
+} from "./operation.ts";
+import {
+  getAllowMethods,
+  getOperationByHttpMethod,
+  type PathItem,
+} from "./pathItem.ts";
+import { stringArrayEqual, stringArrayStartWith } from "./util.ts";
+
+export { createPathItem, type PathItem } from "./pathItem.ts";
+export * from "./operation.ts";
 
 export * as json from "./json.ts";
 export * as query from "./query.ts";
 export * as body from "./body.ts";
-export * as operation from "./operation.ts";
 export * as requestHeader from "./requestHeader.ts";
 export * as response from "./response.ts";
 export * as responseHeader from "./responseHeader.ts";
 
 export const createHandler = (
-  { operations }: {
-    readonly operations: ReadonlyArray<OperationInternal>;
+  { pathItem }: {
+    readonly pathItem: PathItem;
   },
 ): (request: Request) => Promise<Response> => {
   return async (request): Promise<Response> => {
-    const pathsGroupByPath: ReadonlyMap<
-      string,
-      ReadonlyArray<OperationInternal>
-    > = Map
-      .groupBy(operations, (operation) => operation.path);
-    for (const [path, operations] of pathsGroupByPath) {
-      const urlPattern = new URLPattern({ pathname: path });
-      const result = urlPattern.exec(request.url);
-      if (result) {
-        const mathMethodOperation = operations.find((operation) =>
-          operation.method === request.method
-        );
-        if (mathMethodOperation) {
-          return await handleOperation({
-            operation: mathMethodOperation,
-            request,
-            result,
-          });
-        }
-        return new Response(undefined, {
-          status: supportedHttpMethodSet.has(request.method) ? 405 : 501,
-        });
-      }
+    const httpMethod = httpMethodFromString(request.method);
+    if (!httpMethod) {
+      // https://datatracker.ietf.org/doc/html/rfc9110#section-9.1-10
+      return new Response(undefined, { status: 501 });
     }
-    return new Response(undefined, {
-      status: supportedHttpMethodSet.has(request.method) ? 404 : 501,
+
+    return await handleInPathItem({
+      prefix: [],
+      pathItem,
+      request,
+      simpleUrl: urlToSimpleUrl(new URL(request.url)),
+      method: httpMethod,
+      pathVariables: {},
     });
   };
+};
+
+const handleInPathItem = async (
+  { prefix, pathItem, simpleUrl, request, method, pathVariables }: {
+    prefix: ReadonlyArray<string>;
+    pathItem: PathItem;
+    request: Request;
+    simpleUrl: SimpleUrl;
+    method: HttpMethod;
+    pathVariables: { readonly [key: string]: string };
+  },
+): Promise<Response> => {
+  if (stringArrayEqual(simpleUrl.pathSegments, prefix)) {
+    const operation = getOperationByHttpMethod(pathItem, method);
+    if (!operation) {
+      return new Response(undefined, {
+        status: 405,
+        headers: {
+          Allow: Array.from(getAllowMethods(pathItem)).join(", "),
+        },
+      });
+    }
+    return handleOperation({
+      operation,
+      request,
+      pathVariables,
+    });
+  }
+  for (const [subPath, subPathItem] of Object.entries(pathItem.subPath ?? {})) {
+    const subPrefix = [...prefix, subPath];
+    if (stringArrayStartWith(simpleUrl.pathSegments, subPrefix)) {
+      return await handleInPathItem({
+        prefix: subPrefix,
+        pathItem: subPathItem,
+        request,
+        method,
+        pathVariables,
+        simpleUrl,
+      });
+    }
+  }
+  if (pathItem.subPathVariable) {
+    const { variableName, pathItem: subPathItem } = pathItem.subPathVariable;
+    const variableValue = simpleUrl.pathSegments[prefix.length];
+    if (variableValue !== undefined) {
+      return await handleInPathItem({
+        prefix,
+        pathItem: subPathItem,
+        request,
+        method,
+        pathVariables: {
+          ...pathVariables,
+          [variableName]: variableValue,
+        },
+        simpleUrl,
+      });
+    }
+  }
+  return new Response(undefined, { status: 404 });
 };
 
 type ValueOrError = {
@@ -56,10 +115,10 @@ type ValueOrError = {
 };
 
 const handleOperation = async (
-  { operation, request, result }: {
-    operation: OperationInternal;
+  { operation, request, pathVariables }: {
+    operation: OperationInternalWithBody | OperationInternalWithoutBody;
     request: Request;
-    result: URLPatternResult;
+    pathVariables: { readonly [key: string]: string };
   },
 ): Promise<Response> => {
   const searchParams = new URL(request.url).searchParams;
@@ -121,7 +180,8 @@ const handleOperation = async (
   }
 
   const contentType = request.headers.get("content-type");
-  const needBody = operation.requestBody !== undefined &&
+  const needBody = "requestBody" in operation &&
+    operation.requestBody !== undefined &&
     operation.requestBody.content.length > 0;
   if (
     needBody && request.body === null
@@ -138,7 +198,8 @@ const handleOperation = async (
       },
     );
   }
-  const matchedRequestBodyDefinition = contentType
+  const matchedRequestBodyDefinition = contentType &&
+      "requestBody" in operation
     ? operation.requestBody?.content.find((e) => e.mimeType === contentType)
     : undefined;
 
@@ -157,7 +218,7 @@ const handleOperation = async (
   }
 
   return await operation.handler({
-    pathParameters: result.pathname.groups as Record<string, never>,
+    pathParameters: pathVariables,
     queryParameters: Object.fromEntries(
       queryParameters.map((e) => {
         if (e.type === "error") {

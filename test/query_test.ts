@@ -1,15 +1,21 @@
 import { assertEquals } from "jsr:@std/assert";
 import { assertSpyCall, spy } from "jsr:@std/testing/mock";
-import { body, createHandler, json, operation, response } from "../mod.ts";
+import {
+  body,
+  createHandler,
+  createPathItem,
+  json,
+  operationWithoutBody,
+  response,
+} from "../mod.ts";
 import { query } from "../mod.ts";
 import type { Equal, Expect } from "npm:@type-challenges/utils";
 
 Deno.test("query parameter", async () => {
   const func = spy((_headers: unknown): void => {});
   const handler = createHandler({
-    operations: [
-      operation.get({
-        path: "/samplePath",
+    pathItem: createPathItem({
+      get: operationWithoutBody({
         queryParameters: {
           key: query.required({
             description: "",
@@ -53,10 +59,10 @@ Deno.test("query parameter", async () => {
           return response["200"]({}, "text/plain", "");
         },
       }),
-    ],
+    }),
   });
 
-  const url = new URL("https://example.com/samplePath");
+  const url = new URL("https://example.com/");
   url.searchParams.set("key", "value");
   url.searchParams.set("サンプルキー!", " &?=?&+");
   url.searchParams.set(" &?empty", "");
@@ -74,9 +80,8 @@ Deno.test("query parameter", async () => {
 
 Deno.test("query parameter empty", async () => {
   const handler = createHandler({
-    operations: [
-      operation.get({
-        path: "/samplePath",
+    pathItem: createPathItem({
+      get: operationWithoutBody({
         responses: [response.ok({
           headers: [],
           description: "",
@@ -95,10 +100,10 @@ Deno.test("query parameter empty", async () => {
           return response["200"]({}, "application/json", queryParameters);
         },
       }),
-    ],
+    }),
   });
 
-  const url = new URL("https://example.com/samplePath");
+  const url = new URL("https://example.com/");
   url.searchParams.set("extra", "aaa");
   assertEquals(
     await (await handler(new Request(url))).json(),
@@ -108,9 +113,8 @@ Deno.test("query parameter empty", async () => {
 
 Deno.test("query parameter required", async () => {
   const handler = createHandler({
-    operations: [
-      operation.get({
-        path: "/samplePath",
+    pathItem: createPathItem({
+      get: operationWithoutBody({
         queryParameters: {
           a: query.required({
             description: "",
@@ -168,10 +172,10 @@ Deno.test("query parameter required", async () => {
           return response["200"]({}, "application/json", {});
         },
       }),
-    ],
+    }),
   });
 
-  const url = new URL("https://example.com/samplePath");
+  const url = new URL("https://example.com/");
   url.searchParams.set("a", "A");
   url.searchParams.set("b", "B");
 

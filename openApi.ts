@@ -4,17 +4,23 @@ import type {
   OpenAPI3,
   OperationObject,
   ParameterObject,
+  PathItemObject,
+  PathsObject,
   RequestBodyObject,
   ResponseObject,
   SchemaObject,
 } from "openapi-typescript";
-import type { OperationInternal } from "./operation.ts";
-import { body, json, operation, response } from "./mod.ts";
+import {
+  type CreateHandlerType,
+  type OperationInternalWithBody,
+  type OperationInternalWithoutBody,
+  operationWithoutBody,
+} from "./operation.ts";
+import { body, json, response } from "./mod.ts";
+import { createPathItem, type PathItem } from "./pathItem.ts";
 
-export const createOpenApiOperation = ({ path, handler }: {
-  readonly path: string;
-  readonly handler: operation.CreateHandlerType<
-    string,
+export const createOpenApiPathItem = ({ handler }: {
+  readonly handler: CreateHandlerType<
     never,
     never,
     never,
@@ -32,60 +38,91 @@ export const createOpenApiOperation = ({ path, handler }: {
       ]
     >
   >;
-}): OperationInternal =>
-  operation.get({
-    path,
-    responses: [response.ok({
-      description: "Open API schema",
-      headers: [],
-      content: [body.applicationJson(json.object({
-        openapi: json.string(),
-      }))],
-    })],
-    handler,
+}): PathItem =>
+  createPathItem({
+    get: operationWithoutBody({
+      responses: [response.ok({
+        description: "Open API schema",
+        headers: [],
+        content: [body.applicationJson(json.object({
+          openapi: json.string(),
+        }))],
+      })],
+      handler,
+    }),
   });
 
-export function createOpenApi({ info, operations: paths }: {
+export function createOpenApi({ info, pathItem }: {
   readonly info: InfoObject;
-  readonly operations: ReadonlyArray<OperationInternal>;
+  readonly pathItem: PathItem;
 }): OpenAPI3 {
   return {
     openapi: "3.1.1",
     info,
-    paths: Object.fromEntries(
-      [...Map.groupBy(paths, (path) => path.path)].map((
-        [path, operations],
-      ) => [
-        path,
-        Object.fromEntries<OperationObject>(
-          operations.map(
-            (
-              operation,
-            ): [string, OperationObject] => [
-              operation.method.toLowerCase(),
-              operationToObject(operation),
-            ],
-          ),
-        ),
-      ]),
-    ),
+    paths: pathItemToOperationObject(pathItem),
   };
 }
 
-const operationToObject = (operation: OperationInternal): OperationObject => {
-  const requestBody: RequestBodyObject | undefined = operation.requestBody
-    ? {
-      description: operation.requestBody.description,
-      content: Object.fromEntries<MediaTypeObject>(
-        operation.requestBody.content.map(
-          (body): [string, MediaTypeObject] => [
-            body.mimeType,
-            body.jsonSchema,
-          ],
+const pathItemToOperationObject = (
+  pathItem: PathItem,
+): PathsObject => {
+  return Object.fromEntries(pathItemToOperationObjectLoop("", pathItem));
+};
+
+const pathItemToOperationObjectLoop = (
+  prefix: string,
+  pathItem: PathItem,
+): ReadonlyArray<readonly [string, PathItemObject]> => {
+  const subPaths: ReadonlyArray<readonly [string, PathItemObject]> = Object
+    .entries(pathItem.subPath ?? {}).flatMap((
+      [name, subPathItem],
+    ) => (
+      pathItemToOperationObjectLoop(
+        `${prefix}/${name}`,
+        subPathItem,
+      )
+    ));
+  if (
+    pathItem.get || pathItem.post || pathItem.put || pathItem.patch ||
+    pathItem.delete || pathItem.options || pathItem.head
+  ) {
+    return [
+      [prefix ? prefix : "/", {
+        ...(pathItem.get ? { get: operationToObject(pathItem.get) } : {}),
+        ...(pathItem.post ? { post: operationToObject(pathItem.post) } : {}),
+        ...(pathItem.put ? { put: operationToObject(pathItem.put) } : {}),
+        ...(pathItem.patch ? { patch: operationToObject(pathItem.patch) } : {}),
+        ...(pathItem.delete
+          ? { delete: operationToObject(pathItem.delete) }
+          : {}),
+        ...(pathItem.options
+          ? { options: operationToObject(pathItem.options) }
+          : {}),
+        ...(pathItem.head ? { head: operationToObject(pathItem.head) } : {}),
+      }],
+      ...subPaths,
+    ];
+  }
+  return subPaths;
+};
+
+const operationToObject = (
+  operation: OperationInternalWithBody | OperationInternalWithoutBody,
+): OperationObject => {
+  const requestBody: RequestBodyObject | undefined =
+    "requestBody" in operation && operation.requestBody
+      ? {
+        description: operation.requestBody.description,
+        content: Object.fromEntries<MediaTypeObject>(
+          operation.requestBody.content.map(
+            (body): [string, MediaTypeObject] => [
+              body.mimeType,
+              body.jsonSchema,
+            ],
+          ),
         ),
-      ),
-    }
-    : undefined;
+      }
+      : undefined;
 
   return {
     ...(operation.description ? { description: operation.description } : {}),
@@ -111,7 +148,6 @@ const operationToObject = (operation: OperationInternal): OperationObject => {
         } as SchemaObject,
       })),
     ],
-
     ...(requestBody ? { requestBody } : {}),
     responses: Object.fromEntries(operation.responses.map(
       (response): [string, ResponseObject] => [response.statusCode, {
